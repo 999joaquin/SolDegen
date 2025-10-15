@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Wallet, Menu, LogOut, User, Settings, Trophy } from "lucide-react";
 import WalletConnectDialog from "../wallet/WalletConnectDialog";
 import { useWallet } from "@/hooks/use-wallet";
-import { shortenAddress } from "../utils/format";
+import { shortenAddress } from "@/utils/format";
 import BalanceBadge from "../wallet/BalanceBadge";
 import {
   DropdownMenu,
