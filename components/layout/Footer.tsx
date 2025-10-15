@@ -27,11 +27,6 @@ export function Footer() {
                 height={40}
                 className="rounded-lg"
               />
-              <h3 className="text-2xl font-bold">
-                <span className="bg-gradient-to-r from-purple-400 to-purple-600 bg-clip-text text-transparent">
-                  SolDegen
-                </span>
-              </h3>
             </div>
             <p className="text-gray-300 mb-6">
               SolDegen is a cutting-edge Solana-based gambling platform that offers provably fair games and lightning-fast transactions.
