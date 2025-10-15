@@ -7,8 +7,16 @@ import Image from "next/image";
 
 export function Footer() {
   return (
-    <footer className="bg-purple-950/90 border-t border-purple-800/50 py-16 px-4 backdrop-blur-sm">
-      <div className="container mx-auto">
+    <footer className="bg-gray-900 border-t border-gray-800 py-16 px-4 relative overflow-hidden">
+      {/* Glowing Orbs Background */}
+      <div className="absolute inset-0">
+        <div className="absolute top-10 left-10 w-32 h-32 bg-purple-600 rounded-full opacity-20 blur-3xl animate-pulse"></div>
+        <div className="absolute top-1/3 right-20 w-40 h-40 bg-blue-600 rounded-full opacity-15 blur-3xl animate-pulse" style={{ animationDelay: '1s' }}></div>
+        <div className="absolute bottom-20 left-1/4 w-36 h-36 bg-indigo-600 rounded-full opacity-20 blur-3xl animate-pulse" style={{ animationDelay: '2s' }}></div>
+        <div className="absolute bottom-10 right-1/3 w-28 h-28 bg-violet-600 rounded-full opacity-15 blur-3xl animate-pulse" style={{ animationDelay: '0.5s' }}></div>
+      </div>
+      
+      <div className="container mx-auto relative z-10">
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           <div>
             <div className="flex items-center space-x-3 mb-6">
@@ -25,7 +33,7 @@ export function Footer() {
                 </span>
               </h3>
             </div>
-            <p className="text-purple-200 mb-6">
+            <p className="text-gray-300 mb-6">
               SolDegen is a cutting-edge Solana-based gambling platform that offers provably fair games and lightning-fast transactions.
               Experience the thrill of Crash and Plinko with complete transparency and security.
             </p>
@@ -34,7 +42,7 @@ export function Footer() {
                 href="https://twitter.com/soldegen" 
                 target="_blank" 
                 rel="noopener noreferrer"
-                className="text-purple-300 hover:text-purple-100 transition-colors"
+                className="text-gray-400 hover:text-purple-400 transition-colors"
               >
                 <Twitter className="w-5 h-5" />
               </a>
@@ -42,7 +50,7 @@ export function Footer() {
                 href="https://github.com/soldegen" 
                 target="_blank" 
                 rel="noopener noreferrer"
-                className="text-purple-300 hover:text-purple-100 transition-colors"
+                className="text-gray-400 hover:text-purple-400 transition-colors"
               >
                 <Github className="w-5 h-5" />
               </a>
@@ -50,7 +58,7 @@ export function Footer() {
                 href="https://instagram.com/soldegen" 
                 target="_blank" 
                 rel="noopener noreferrer"
-                className="text-purple-300 hover:text-purple-100 transition-colors"
+                className="text-gray-400 hover:text-purple-400 transition-colors"
               >
                 <Instagram className="w-5 h-5" />
               </a>
@@ -65,7 +73,7 @@ export function Footer() {
             </h3>
             <ul className="space-y-3">
               <li>
-                <a href="#" className="text-purple-200 hover:text-purple-300 transition-colors">
+                <a href="#" className="text-gray-300 hover:text-purple-400 transition-colors">
                   <span className="flex items-center space-x-2">
                     <Book className="w-4 h-4" />
                     <span>Games</span>
@@ -73,7 +81,7 @@ export function Footer() {
                 </a>
               </li>
               <li>
-                <a href="#" className="text-purple-200 hover:text-purple-300 transition-colors">
+                <a href="#" className="text-gray-300 hover:text-purple-400 transition-colors">
                   <span className="flex items-center space-x-2">
                     <ShieldCheck className="w-4 h-4" />
                     <span>Provably Fair</span>
@@ -81,7 +89,7 @@ export function Footer() {
                 </a>
               </li>
               <li>
-                <a href="#" className="text-purple-200 hover:text-purple-300 transition-colors">
+                <a href="#" className="text-gray-300 hover:text-purple-400 transition-colors">
                   <span className="flex items-center space-x-2">
                     <Code className="w-4 h-4" />
                     <span>API</span>
@@ -98,23 +106,23 @@ export function Footer() {
               </span>
             </h3>
             <ul className="space-y-3">
-              <li><a href="#" className="text-purple-200 hover:text-purple-300 transition-colors">Terms of Service</a></li>
-              <li><a href="#" className="text-purple-200 hover:text-purple-300 transition-colors">Privacy Policy</a></li>
-              <li><a href="#" className="text-purple-200 hover:text-purple-300 transition-colors">Responsible Gaming</a></li>
+              <li><a href="#" className="text-gray-300 hover:text-purple-400 transition-colors">Terms of Service</a></li>
+              <li><a href="#" className="text-gray-300 hover:text-purple-400 transition-colors">Privacy Policy</a></li>
+              <li><a href="#" className="text-gray-300 hover:text-purple-400 transition-colors">Responsible Gaming</a></li>
             </ul>
           </div>
         </div>
         
-        <div className="border-t border-purple-800/30 mt-12 pt-8">
-          <div className="bg-purple-900/30 border border-purple-800/30 rounded-lg p-6 backdrop-blur-sm mb-8">
+        <div className="border-t border-gray-700 mt-12 pt-8">
+          <div className="bg-gray-800/50 border border-gray-700 rounded-lg p-6 backdrop-blur-sm mb-8">
             <div className="flex items-center space-x-3 mb-4">
               <Code className="w-5 h-5 text-purple-400" />
-              <h4 className="text-lg font-semibold">Provably Fair</h4>
+              <h4 className="text-lg font-semibold text-gray-200">Provably Fair</h4>
             </div>
-            <p className="text-purple-200 text-sm mb-4">
+            <p className="text-gray-300 text-sm mb-4">
               Our provably fair system uses a combination of server seed, client seed, and nonce to ensure that every game is 100% random and verifiable.
             </p>
-            <div className="text-xs text-purple-300">
+            <div className="text-xs text-gray-400">
               <span className="font-semibold">Server Seed:</span> 7a4b...e8c2
               <br />
               <span className="font-semibold">Client Seed:</span> f9d6...a1b3
@@ -124,7 +132,7 @@ export function Footer() {
           </div>
           
           <div className="text-center">
-            <p className="text-purple-300 text-sm">© 2024 SolDegen. All rights reserved.</p>
+            <p className="text-gray-400 text-sm">© 2024 SolDegen. All rights reserved.</p>
           </div>
         </div>
       </div>
