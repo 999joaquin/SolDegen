@@ -23,8 +23,8 @@ export function Footer() {
               <Image 
                 src="/logo.png" 
                 alt="SolDegen Logo" 
-                width={120} 
-                height={120}
+                width={160} 
+                height={160}
                 className="rounded-lg"
               />
             </div>
