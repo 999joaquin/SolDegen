@@ -1,0 +1,56 @@
+"use client";
+
+import React from "react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+
+export default function CrashPage() {
+  return (
+    <div className="flex flex-col items-center justify-center min-h-[calc(100vh-120px)] p-4">
+      <h1 className="text-5xl font-extrabold text-primary mb-8 animate-pulse">Crash</h1>
+      <Card className="w-full max-w-4xl bg-card border-border shadow-lg">
+        <CardHeader className="border-b border-border">
+          <CardTitle className="text-3xl text-primary-foreground">Game Area</CardTitle>
+        </CardHeader>
+        <CardContent className="p-6">
+          <div className="h-96 bg-secondary/20 rounded-lg flex items-center justify-center text-muted-foreground text-2xl border border-dashed border-border mb-6">
+            Crash Game Visualization Here
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <Card className="bg-card border-border">
+              <CardHeader>
+                <CardTitle className="text-xl text-primary-foreground">Bet Controls</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div>
+                  <label htmlFor="betAmount" className="block text-sm font-medium text-muted-foreground mb-1">Bet Amount (SOL)</label>
+                  <Input id="betAmount" type="number" placeholder="0.1" className="bg-input border-border text-foreground" />
+                </div>
+                <div>
+                  <label htmlFor="cashOut" className="block text-sm font-medium text-muted-foreground mb-1">Auto Cash Out (x)</label>
+                  <Input id="cashOut" type="number" placeholder="2.00" className="bg-input border-border text-foreground" />
+                </div>
+                <Button className="w-full bg-primary hover:bg-primary/90 text-primary-foreground text-lg py-3 rounded-lg shadow-md">
+                  Place Bet
+                </Button>
+              </CardContent>
+            </Card>
+            <Card className="bg-card border-border">
+              <CardHeader>
+                <CardTitle className="text-xl text-primary-foreground">Recent Bets</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <ul className="space-y-2 text-muted-foreground">
+                  <li>Player1 bet 0.05 SOL, cashed out at 1.8x</li>
+                  <li>Player2 bet 0.1 SOL, crashed at 3.2x</li>
+                  <li>Player3 bet 0.02 SOL, cashed out at 1.5x</li>
+                </ul>
+              </CardContent>
+            </Card>
+          </div>
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
