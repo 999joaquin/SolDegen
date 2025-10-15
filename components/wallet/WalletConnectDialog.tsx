@@ -78,7 +78,10 @@ const WalletConnectDialog: React.FC<WalletConnectDialogProps> = ({ open, onOpenC
   }, [open, connectWithPhantom, onOpenChange, form]);
 
   async function onSubmit(values: FormValues) {
-    await connectWithPhantom(values)
+    await connectWithPhantom({
+      username: values.username,
+      email: values.email
+    })
       .then(() => onOpenChange(false))
       .catch((err) => {
         console.error(err);
