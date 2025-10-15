@@ -34,7 +34,7 @@ export function Footer() {
             </p>
             <div className="flex space-x-4">
               <a 
-                href="https://twitter.com/soldegen" 
+                href="https://x.com/SolDegenBet"
                 target="_blank" 
                 rel="noopener noreferrer"
                 className="text-gray-400 hover:text-purple-400 transition-colors"
@@ -42,7 +42,7 @@ export function Footer() {
                 <Twitter className="w-5 h-5" />
               </a>
               <a 
-                href="https://github.com/soldegen" 
+                href=""
                 target="_blank" 
                 rel="noopener noreferrer"
                 className="text-gray-400 hover:text-purple-400 transition-colors"
@@ -50,7 +50,7 @@ export function Footer() {
                 <Github className="w-5 h-5" />
               </a>
               <a 
-                href="https://instagram.com/soldegen" 
+                href=""
                 target="_blank" 
                 rel="noopener noreferrer"
                 className="text-gray-400 hover:text-purple-400 transition-colors"
