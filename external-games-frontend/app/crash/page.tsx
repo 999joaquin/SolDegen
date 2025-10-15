@@ -1,4 +1,4 @@
-"use client";
+'use client';
 
 import { useState, useEffect } from 'react';
 import { crashSocket } from '@/lib/crashSocket';
@@ -6,6 +6,7 @@ import { getCrashFair, getCrashStats, getCrashHistoryDedup, getCrashRoundDetail 
 import CrashChat from '@/components/CrashChat';
 
 type CrashState = 'IDLE' | 'COUNTDOWN' | 'RUNNING';
+
 type Chip = { multiplier: number; count: number; rounds: string[]; losers: { userId:number; bet:number }[] };
 
 interface HistoryItemFull {
@@ -23,14 +24,19 @@ interface HistoryItemFull {
   }[];
 }
 
-const API_BASE = (process.env.NEXT_PUBLIC_API_BASE ?? 'http://localhost:3000').replace(/\/$/, '');
+const API_BASE = process.env.NEXT_PUBLIC_API_BASE || 'http://localhost:3001';
 
 function randomHex16() {
-  return [...crypto.getRandomValues(new Uint8Array(8))].map(b => b.toString(16).padStart(2, '0')).join('');
+  return [...crypto.getRandomValues(new Uint8Array(8))]
+    .map(b => b.toString(16).padStart(2, '0'))
+    .join('');
 }
 
 export default function CrashPage() {
+  // User identification
   const [userId, setUserId] = useState<number | null>(null);
+
+  // Game state
   const [bet, setBet] = useState(1);
   const [auto, setAuto] = useState<number | ''>('');
   const [clientSeed, setClientSeed] = useState('');
@@ -42,38 +48,56 @@ export default function CrashPage() {
   const [cashed, setCashed] = useState(false);
   const [cashoutPending, setCashoutPending] = useState(false);
 
+  // Stats state
   const [serverSeedHash, setServerSeedHash] = useState('');
   const [lastCrashMultiplier, setLastCrashMultiplier] = useState(0);
   const [rounds, setRounds] = useState(0);
   const [houseProfit, setHouseProfit] = useState(0);
   const [balance, setBalance] = useState(100);
 
+  // Toast state
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' | 'info' } | null>(null);
+  
+  // History state
   const [chips, setChips] = useState<Chip[]>([]);
   const [selectedRoundId, setSelectedRoundId] = useState<string | null>(null);
   const [roundDetail, setRoundDetail] = useState<any | null>(null);
   const [loadingDetail, setLoadingDetail] = useState(false);
 
+  // Load chips from localStorage on mount (client-side only)
   useEffect(() => {
-    const saved = typeof window !== 'undefined' ? localStorage.getItem('crash_history') : null;
-    if (saved) { try { setChips(JSON.parse(saved)); } catch (e) { console.error('Failed to parse crash history:', e); } }
+    const saved = localStorage.getItem('crash_history');
+    if (saved) {
+      try {
+        setChips(JSON.parse(saved));
+      } catch (e) {
+        console.error('Failed to parse crash history from localStorage:', e);
+      }
+    }
   }, []);
 
+  // Save chips to localStorage whenever it changes
   useEffect(() => {
-    if (chips.length > 0) localStorage.setItem('crash_history', JSON.stringify(chips.slice(0, 50)));
+    if (chips.length > 0) {
+      localStorage.setItem('crash_history', JSON.stringify(chips.slice(0, 50)));
+    }
   }, [chips]);
 
+  // Initialize userId from localStorage
   useEffect(() => {
+    // Try to get from localStorage
     const saved = typeof window !== 'undefined' ? localStorage.getItem('demoUserId') : null;
     if (saved) {
       setUserId(Number(saved));
     } else {
+      // Generate random 6 digit ID for demo (production: use actual user login ID)
       const newId = Math.floor(100000 + Math.random() * 900000);
       localStorage.setItem('demoUserId', String(newId));
       setUserId(newId);
     }
   }, []);
 
+  // Initialize client seed and load data
   useEffect(() => {
     setClientSeed(randomHex16());
     loadInitialData();
@@ -92,17 +116,24 @@ export default function CrashPage() {
 
   const loadInitialData = async () => {
     try {
-      const [fairData, statsData] = await Promise.all([getCrashFair(), getCrashStats()]);
+      const [fairData, statsData] = await Promise.all([
+        getCrashFair(),
+        getCrashStats()
+      ]);
+      
       setServerSeedHash(fairData.serverSeedHash);
       setRounds(statsData.rounds);
       setHouseProfit(statsData.houseProfit);
       setLastCrashMultiplier(statsData.lastCrashMultiplier);
+
+      // Load balance if userId is available
       await refreshBalance();
     } catch (error) {
       console.error('Failed to load initial data:', error);
     }
   };
 
+  // Preload chips on page load
   useEffect(() => {
     (async () => {
       try {
@@ -112,6 +143,7 @@ export default function CrashPage() {
     })();
   }, []);
 
+  // Socket event handlers - depend on userId to ensure handlers use latest userId
   useEffect(() => {
     if (!userId) return;
 
@@ -139,13 +171,19 @@ export default function CrashPage() {
       setCashoutPending(false);
     };
 
+    // Fix: Use local userId instead of hardcoded 1
     const handleCashedOut = (data: any) => {
       if (data.userId === userId) {
         setCashed(true);
         setCashoutPending(false);
         showToast(`You cashed out at ${data.atMultiplier.toFixed(2)}×`, 'success');
+        // Refresh balance after cashout
         refreshBalance();
       }
+      // Optional: Show info when other players cashout
+      // else {
+      //   showToast(`User #${data.userId} cashed out at ${data.atMultiplier.toFixed(2)}×`, 'info');
+      // }
     };
 
     const handleCrashed = (data: any) => {
@@ -161,12 +199,13 @@ export default function CrashPage() {
         setJoined(false);
         setMultiplier(1.00);
         setCashoutPending(false);
-        loadInitialData();
-        refreshBalance();
+        loadInitialData(); // Refresh stats
+        refreshBalance();  // Refresh balance after round
       }, 600);
     };
 
     const handleError = (error: any) => {
+      // Reset pending state if cashout fails (e.g., "Already cashed out")
       setCashoutPending(false);
       showToast(error.message || 'An error occurred', 'error');
     };
@@ -175,6 +214,7 @@ export default function CrashPage() {
       if (payload?.chips) setChips(payload.chips);
     };
 
+    // Register socket listeners
     crashSocket.on('round_update', handleRoundUpdate);
     crashSocket.on('joined', handleJoined);
     crashSocket.on('round_started', handleRoundStarted);
@@ -194,8 +234,9 @@ export default function CrashPage() {
       crashSocket.off('error', handleError);
       crashSocket.off('history_update', handleHistoryUpdate);
     };
-  }, [userId]);
+  }, [userId]); // Important: depend on userId
 
+  // Fetch round detail when chip is selected
   useEffect(() => {
     let mounted = true;
     (async () => {
@@ -204,6 +245,8 @@ export default function CrashPage() {
       try {
         const data: HistoryItemFull = await getCrashRoundDetail(selectedRoundId);
         if (!mounted) return;
+
+        // Sort: cashedOut ASC, losers at the end
         const sorted = [...data.players].sort((a, b) => {
           const ax = a.cashedOut ? a.cashedOut.atMultiplier : Infinity;
           const bx = b.cashedOut ? b.cashedOut.atMultiplier : Infinity;
@@ -219,6 +262,7 @@ export default function CrashPage() {
     return () => { mounted = false; };
   }, [selectedRoundId]);
 
+  // Close modal with ESC key
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
@@ -230,6 +274,7 @@ export default function CrashPage() {
     return () => window.removeEventListener('keydown', onKey);
   }, []);
 
+  // Auto cashout logic
   useEffect(() => {
     if (auto && state === 'RUNNING' && !cashed && multiplier >= auto) {
       handleCashout();
@@ -242,40 +287,54 @@ export default function CrashPage() {
   };
 
   const handleJoinRound = () => {
-    if (!userId) return;
-    crashSocket.emit('join_round', { userId, bet, clientSeed });
+    if (!userId) return; // Don't emit until userId is ready
+    crashSocket.emit('join_round', {
+      userId,
+      bet,
+      clientSeed,
+    });
   };
 
   const handleCashout = () => {
     if (!userId || cashed || cashoutPending) return;
-    setCashoutPending(true);
+    setCashoutPending(true); // Give immediate feedback
     crashSocket.emit('cashout', { userId });
   };
 
   const getHudMessage = () => {
     switch (state) {
-      case 'IDLE': return 'Waiting for players...';
-      case 'COUNTDOWN': return `Starting in ${Math.ceil(timeLeftMs / 1000)}s • Players: ${players}`;
-      case 'RUNNING': return 'In-Play';
-      default: return 'Waiting for players...';
+      case 'IDLE':
+        return 'Waiting for players...';
+      case 'COUNTDOWN':
+        const seconds = Math.ceil(timeLeftMs / 1000);
+        return `Starting in ${seconds}s • Players: ${players}`;
+      case 'RUNNING':
+        return 'In-Play';
+      default:
+        return 'Waiting for players...';
     }
   };
 
   const getRocketPosition = () => {
+    // Move rocket right as multiplier increases, max at 80% of container width
     const progress = Math.min((multiplier - 1) * 20, 80);
     return `${progress}%`;
   };
 
+
   return (
-    <div className="flex gap-6 p-6 h-[calc(100vh-120px)] md:h-[calc(100vh-88px)]">
+    <div className="flex gap-6 p-6 h-[calc(100vh-88px)]">
+      {/* Toast */}
       {toast && (
         <div className={`fixed top-20 right-6 z-50 px-4 py-2 rounded-lg text-white font-semibold ${
-          toast.type === 'success' ? 'bg-green-600' : toast.type === 'error' ? 'bg-red-600' : 'bg-blue-600'
+          toast.type === 'success' ? 'bg-green-600' : 
+          toast.type === 'error' ? 'bg-red-600' : 'bg-blue-600'
         }`}>
           {toast.message}
         </div>
       )}
 
+      {/* Left Panel */}
       <div className="w-80 space-y-4">
         <div className="rounded-2xl bg-zinc-900/70 border border-zinc-800 p-4">
           <h3 className="text-lg font-semibold mb-4">Bet Amount</h3>
@@ -292,9 +351,24 @@ export default function CrashPage() {
               />
             </div>
             <div className="flex gap-2">
-              <button onClick={() => setBet(bet / 2)} className="flex-1 bg-zinc-800 hover:bg-zinc-700 border border-zinc-700 rounded-lg py-2 text-sm">÷2</button>
-              <button onClick={() => setBet(bet * 2)} className="flex-1 bg-zinc-800 hover:bg-zinc-700 border border-zinc-700 rounded-lg py-2 text-sm">2×</button>
-              <button onClick={() => setBet(10)} className="flex-1 bg-zinc-800 hover:bg-zinc-700 border border-zinc-700 rounded-lg py-2 text-sm">MAX</button>
+              <button
+                onClick={() => setBet(bet / 2)}
+                className="flex-1 bg-zinc-800 hover:bg-zinc-700 border border-zinc-700 rounded-lg py-2 text-sm"
+              >
+                ÷2
+              </button>
+              <button
+                onClick={() => setBet(bet * 2)}
+                className="flex-1 bg-zinc-800 hover:bg-zinc-700 border border-zinc-700 rounded-lg py-2 text-sm"
+              >
+                2×
+              </button>
+              <button
+                onClick={() => setBet(10)}
+                className="flex-1 bg-zinc-800 hover:bg-zinc-700 border border-zinc-700 rounded-lg py-2 text-sm"
+              >
+                MAX
+              </button>
             </div>
           </div>
         </div>
@@ -344,7 +418,9 @@ export default function CrashPage() {
         </div>
       </div>
 
+      {/* Center Stage */}
       <div className="flex-1 rounded-2xl bg-zinc-900/70 border border-zinc-800 p-6 relative overflow-hidden">
+        {/* History Chips */}
         <div className="absolute top-6 left-6 right-6 z-30 pointer-events-none">
           <div className="flex gap-2 overflow-x-auto pb-2 -mt-2 pointer-events-auto">
             {chips.map((c) => {
@@ -368,15 +444,20 @@ export default function CrashPage() {
           </div>
         </div>
         
+        {/* HUD Bar */}
         <div className="absolute top-16 left-6 right-6 text-center z-10">
           <div className="text-zinc-400 font-medium">{getHudMessage()}</div>
         </div>
 
+        {/* Current Payout */}
         <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-center">
-          <div className="text-6xl font-bold text-white mb-2">{multiplier.toFixed(2)}×</div>
+          <div className="text-6xl font-bold text-white mb-2">
+            {multiplier.toFixed(2)}×
+          </div>
           <div className="text-zinc-400">CURRENT PAYOUT</div>
         </div>
 
+        {/* Grid Background */}
         <div 
           className="absolute inset-0 opacity-20 pointer-events-none z-0"
           style={{
@@ -388,15 +469,22 @@ export default function CrashPage() {
           }}
         />
 
+        {/* Rocket Animation */}
         <div className="absolute bottom-20 left-4 right-4 h-20 z-10">
-          <div className="absolute bottom-0 transition-all duration-100 ease-out" style={{ left: getRocketPosition() }}>
-            <div className="w-12 h-12 bg-gradient-to-r from-blue-400 to-purple-500 rounded-full flex items-center justify-center shadow-lg shadow-blue-500/50">🚀</div>
+          <div 
+            className="absolute bottom-0 transition-all duration-100 ease-out"
+            style={{ left: getRocketPosition() }}
+          >
+            <div className="w-12 h-12 bg-gradient-to-r from-blue-400 to-purple-500 rounded-full flex items-center justify-center shadow-lg shadow-blue-500/50">
+              🚀
+            </div>
             {state === 'RUNNING' && (
               <div className="absolute -left-8 top-1/2 transform -translate-y-1/2 w-16 h-2 bg-gradient-to-r from-transparent via-blue-400 to-purple-500 opacity-70 blur-sm"></div>
             )}
           </div>
         </div>
 
+        {/* Scale Marks */}
         <div className="absolute right-6 top-20 bottom-20 flex flex-col justify-between text-zinc-500 text-sm">
           {[10, 5, 3, 2, 1.5, 1].map(mark => (
             <div key={mark} className="flex items-center">
@@ -407,6 +495,7 @@ export default function CrashPage() {
         </div>
       </div>
 
+      {/* Right Panel */}
       <div className="w-80 space-y-4">
         <div className="rounded-2xl bg-zinc-900/70 border border-zinc-800 p-4">
           <h3 className="text-lg font-semibold mb-4">Game Stats</h3>
@@ -437,52 +526,88 @@ export default function CrashPage() {
           <div className="space-y-2 text-sm">
             <div>
               <span className="text-zinc-400 block">Server Seed Hash:</span>
-              <span className="text-white font-mono text-xs break-all">{serverSeedHash || 'Loading...'}</span>
+              <span className="text-white font-mono text-xs break-all">
+                {serverSeedHash || 'Loading...'}
+              </span>
             </div>
-            <div className="text-xs text-zinc-500 mt-2">Your ID: #{userId ?? '...'}</div>
+            <div className="text-xs text-zinc-500 mt-2">
+              Your ID: #{userId ?? '...'}
+            </div>
           </div>
         </div>
 
+        {/* Chat Section */}
         {userId && <CrashChat userId={userId} username={`Player${userId}`} />}
       </div>
       
+      {/* Round Detail Modal */}
       {selectedRoundId && (
-        <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50" onClick={(e) => {
-          if (e.target === e.currentTarget) { setSelectedRoundId(null); setRoundDetail(null); }
-        }}>
-          <div className="w-[560px] max-h-[80vh] overflow-auto bg-zinc-900 border border-zinc-800 rounded-2xl p-5">
+        <div
+          className="fixed inset-0 bg-black/60 flex items-center justify-center z-50"
+          onClick={(e) => {
+            if (e.target === e.currentTarget) { // klik backdrop
+              setSelectedRoundId(null);
+              setRoundDetail(null);
+            }
+          }}
+        >          <div className="w-[560px] max-h-[80vh] overflow-auto bg-zinc-900 border border-zinc-800 rounded-2xl p-5">
             <div className="flex justify-between items-center mb-3">
-              <h3 className="text-2xl font-extrabold text-white">{roundDetail ? `${roundDetail.resultMultiplier.toFixed(2)}×`  : 'Loading...'}</h3>
-              <button onClick={() => { setSelectedRoundId(null); setRoundDetail(null); }} className="text-zinc-400 hover:text-white">✕</button>
+              <h3 className="text-2xl font-extrabold text-white">
+                {roundDetail ? `${roundDetail.resultMultiplier.toFixed(2)}×`  : 'Loading...'}
+              </h3>
+              <button
+                onClick={() => { setSelectedRoundId(null); setRoundDetail(null); }}
+                className="text-zinc-400 hover:text-white"
+              >
+                ✕
+              </button>
             </div>
 
+            {/* Seeds */}
             <div className="text-sm text-zinc-300 space-y-1 mb-4">
               <div><span className="text-zinc-500">Game ID:</span> <span className="font-mono">{roundDetail?.roundId ?? '-'}</span></div>
               <div><span className="text-zinc-500">Server Seed Hash:</span> <span className="font-mono break-all">{roundDetail?.serverSeedHash ?? '-'}</span></div>
               <div><span className="text-zinc-500">Public Seed:</span> <span className="font-mono break-all">{roundDetail?.publicSeed ?? '-'}</span></div>
             </div>
 
+            {/* Players */}
             <div className="border-t border-zinc-800 pt-3">
-              <div className="text-sm font-semibold mb-2 text-white">Players {roundDetail ? `(${roundDetail.players.length})`  : ''}</div>
+              <div className="text-sm font-semibold mb-2 text-white">
+                Players {roundDetail ? `(${roundDetail.players.length})`  : ''}
+              </div>
+
               {loadingDetail && <div className="text-zinc-400">Loading players…</div>}
+
               {!!roundDetail && (
                 <div className="space-y-2 max-h-[48vh] overflow-auto pr-1">
                   {roundDetail.players.map((p: any) => {
                     const busted = !p.cashedOut;
+                    // Calculate profit on client if server doesn't send it
                     const profitNumber = typeof (p as any).profit === 'number'
                       ? (p as any).profit
                       : (busted ? -p.bet : Number((p.cashedOut!.payout - p.bet).toFixed(2)));
-                    const profitStr = `${profitNumber >= 0 ? '+' : ''}${profitNumber.toFixed(2)}`;
+                    const profitStr = `${profitNumber >= 0 ? '+' : ''}${profitNumber.toFixed(2)}` ;
                     const profitColor = profitNumber >= 0 ? 'text-green-400 bg-green-400/10' : 'text-red-400 bg-red-400/10';
+
                     return (
-                      <div key={`${roundDetail.roundId}-${p.userId}`} className="flex items-center justify-between bg-zinc-800/40 rounded-lg px-3 py-2">
+                      <div
+                        key={`${roundDetail.roundId}-${p.userId}` }
+                        className="flex items-center justify-between bg-zinc-800/40 rounded-lg px-3 py-2"
+                      >
                         <div className="flex items-center gap-3">
                           <div className="w-8 h-8 rounded-full bg-zinc-700 flex items-center justify-center text-xs text-white/80">{p.userId}</div>
                           <div className="text-white text-sm">User #{p.userId}</div>
                         </div>
+
                         <div className="text-sm font-mono text-zinc-300">${p.bet.toFixed(2)}</div>
-                        <div className={`text-sm font-semibold ${busted ? 'text-red-400' : 'text-green-400'}` }>{busted ? 'BUSTED' : `${p.cashedOut!.atMultiplier.toFixed(2)}×` }</div>
-                        <div className={`text-xs font-semibold rounded px-2 py-1 ${profitColor}` }>{profitStr}</div>
+
+                        <div className={`text-sm font-semibold ${busted ? 'text-red-400' : 'text-green-400'}` }>
+                          {busted ? 'BUSTED' : `${p.cashedOut!.atMultiplier.toFixed(2)}×` }
+                        </div>
+
+                        <div className={`text-xs font-semibold rounded px-2 py-1 ${profitColor}` }>
+                          {profitStr}
+                        </div>
                       </div>
                     );
                   })}

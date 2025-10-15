@@ -1,4 +1,4 @@
-"use client";
+'use client';
 
 import { useState, useEffect, useMemo } from 'react';
 import Controls from '@/components/Controls';
@@ -47,49 +47,74 @@ type RoundUpdate = {
 };
 
 export default function PlinkoPage() {
+  // User ID - unique per browser
   const userId = useMemo(() => getDemoUserId(), []);
   const username = useMemo(() => `Player${userId}`, [userId]);
 
+  // Game state
   const [bet, setBet] = useState(1.0);
   const [clientSeed, setClientSeed] = useState('');
+  
+  // Round state
   const [roundState, setRoundState] = useState<RoundState>('IDLE');
   const [timeLeftMs, setTimeLeftMs] = useState(0);
   const [players, setPlayers] = useState(0);
   const [joined, setJoined] = useState(false);
+  
+  // API data state
   const [balance, setBalance] = useState(0);
   const [houseProfit, setHouseProfit] = useState(0);
   const [serverSeedHash, setServerSeedHash] = useState('');
   const [lastResult, setLastResult] = useState<BetResult | undefined>();
   const [betHistory, setBetHistory] = useState<BetResult[]>([]);
+  
+  // Animation state
   const [isAnimating, setIsAnimating] = useState(false);
   const [ballPath, setBallPath] = useState<number[]>([]);
   const [finalBin, setFinalBin] = useState<number | undefined>();
+  
+  // Preview balls for all players
   const [previewBalls, setPreviewBalls] = useState<PreviewBall[]>([]);
 
+  // Load bet history from localStorage on mount (client-side only)
   useEffect(() => {
-    const saved = typeof window !== 'undefined' ? localStorage.getItem('plinko_history') : null;
+    const saved = localStorage.getItem('plinko_history');
     if (saved) {
-      try { setBetHistory(JSON.parse(saved)); } catch (e) { console.error('Failed to parse plinko history:', e); }
+      try {
+        setBetHistory(JSON.parse(saved));
+      } catch (e) {
+        console.error('Failed to parse plinko history from localStorage:', e);
+      }
     }
   }, []);
 
+  // Save bet history to localStorage whenever it changes
   useEffect(() => {
     if (betHistory.length > 0) {
       localStorage.setItem('plinko_history', JSON.stringify(betHistory.slice(-50)));
     }
   }, [betHistory]);
 
+  // Generate random client seed on mount
   useEffect(() => {
     if (!clientSeed) {
-      const randomSeed = Array.from({ length: 16 }, () => Math.floor(Math.random() * 16).toString(16)).join('');
+      const randomSeed = Array.from({ length: 16 }, () =>
+        Math.floor(Math.random() * 16).toString(16)
+      ).join('');
       setClientSeed(randomSeed);
     }
   }, [clientSeed]);
 
+  // Load initial data and setup socket
   useEffect(() => {
     const loadInitialData = async () => {
       try {
-        const [fairData, balanceData, statsData] = await Promise.all([getFair(), getBalance(userId), getStats()]);
+        const [fairData, balanceData, statsData] = await Promise.all([
+          getFair(),
+          getBalance(userId),
+          getStats(),
+        ]);
+        
         setBalance(balanceData.balance);
         setHouseProfit(statsData.houseProfit);
         setServerSeedHash(fairData.serverSeedHash);
@@ -97,22 +122,31 @@ export default function PlinkoPage() {
         console.error('Failed to load initial data:', error);
       }
     };
+
     loadInitialData();
 
+    // Socket event handlers
     const handleRoundUpdate = (update: RoundUpdate) => {
       setRoundState(update.state);
       setPlayers(update.players);
       setTimeLeftMs(update.timeLeftMs);
-      if (update.state === 'IDLE') setJoined(false);
+      
+      if (update.state === 'IDLE') {
+        setJoined(false);
+      }
     };
 
     const handleJoined = (response: { roundId: string; userId: number }) => {
+      console.log('Joined round:', response);
       setJoined(true);
     };
 
     const handleRoundStarted = (data: { roundId: string; lockedPlayers: number; startedAt: number }) => {
+      console.log('Round started:', data);
       setRoundState('RUNNING');
-      const colors = ['#ef4444','#3b82f6','#10b981','#f59e0b','#8b5cf6','#ec4899','#14b8a6','#f97316'];
+      
+      // Create preview balls for all locked players
+      const colors = ['#ef4444', '#3b82f6', '#10b981', '#f59e0b', '#8b5cf6', '#ec4899', '#14b8a6', '#f97316'];
       const balls: PreviewBall[] = Array.from({ length: data.lockedPlayers }, (_, i) => ({
         id: `preview-${Date.now()}-${i}`,
         color: colors[i % colors.length],
@@ -125,39 +159,59 @@ export default function PlinkoPage() {
     };
 
     const handleYourResult = (result: BetResult & { roundId: string }) => {
+      console.log('Your result:', result);
+      
       if (result.userId === userId) {
+        // This is the local user's result - animate main ball
         setLastResult(result);
         setBetHistory(prev => [...prev, result]);
         setBallPath(result.path);
         setFinalBin(result.bin);
         setBalance(result.balanceAfter);
         setIsAnimating(true);
+
+        // Refresh stats
         refreshBalanceAndStats();
+        
+        // Also assign a preview ball for visual consistency
         setPreviewBalls(prev => {
           const idx = prev.findIndex(b => !b.assigned);
           if (idx === -1) return prev;
           const next = [...prev];
-          next[idx] = { ...prev[idx], assigned: true, targetBin: result.bin, multiplier: result.multiplier };
+          next[idx] = {
+            ...prev[idx],
+            assigned: true,
+            targetBin: result.bin,
+            multiplier: result.multiplier,
+          };
           return next;
         });
       } else {
+        // This is another player's result - only assign preview ball
         setPreviewBalls(prev => {
           const idx = prev.findIndex(b => !b.assigned);
           if (idx === -1) return prev;
           const next = [...prev];
-          next[idx] = { ...prev[idx], assigned: true, targetBin: result.bin, multiplier: result.multiplier };
+          next[idx] = {
+            ...prev[idx],
+            assigned: true,
+            targetBin: result.bin,
+            multiplier: result.multiplier,
+          };
           return next;
         });
       }
     };
 
-    const handleRoundFinished = () => {
+    const handleRoundFinished = (data: { roundId: string; durationMs: number }) => {
+      console.log('Round finished:', data);
       setTimeout(() => {
         setJoined(false);
         setPreviewBalls([]);
       }, 600);
     };
 
+    // Register socket listeners
     socket.on('round_update', handleRoundUpdate);
     socket.on('joined', handleJoined);
     socket.on('round_started', handleRoundStarted);
@@ -175,7 +229,10 @@ export default function PlinkoPage() {
 
   const refreshBalanceAndStats = async () => {
     try {
-      const [balanceData, statsData] = await Promise.all([getBalance(userId), getStats()]);
+      const [balanceData, statsData] = await Promise.all([
+        getBalance(userId),
+        getStats(),
+      ]);
       setBalance(balanceData.balance);
       setHouseProfit(statsData.houseProfit);
     } catch (error) {
@@ -184,10 +241,18 @@ export default function PlinkoPage() {
   };
 
   const handleJoinRound = () => {
-    socket.emit('join_round', { userId, bet, risk: FIXED_RISK, rows: FIXED_ROWS, clientSeed });
+    socket.emit('join_round', {
+      userId,
+      bet,
+      risk: FIXED_RISK,
+      rows: FIXED_ROWS,
+      clientSeed,
+    });
   };
 
-  const handleAnimationComplete = () => setIsAnimating(false);
+  const handleAnimationComplete = () => {
+    setIsAnimating(false);
+  };
 
   const getButtonText = () => {
     if (roundState === 'RUNNING') return 'Dropping...';
@@ -196,19 +261,29 @@ export default function PlinkoPage() {
     return 'Start / Join Round';
   };
 
-  const isButtonDisabled = () => (isAnimating || roundState === 'RUNNING' || (joined && roundState === 'COUNTDOWN'));
+  const isButtonDisabled = () => {
+    return isAnimating || 
+           roundState === 'RUNNING' || 
+           (joined && roundState === 'COUNTDOWN');
+  };
 
   const getRoundStatus = () => {
     switch (roundState) {
-      case 'IDLE': return 'Waiting for players...';
-      case 'COUNTDOWN': return `Starting in ${Math.ceil(timeLeftMs / 1000)}s • Players: ${players}`;
-      case 'RUNNING': return 'Dropping...';
-      default: return 'Waiting for players...';
+      case 'IDLE':
+        return 'Waiting for players...';
+      case 'COUNTDOWN':
+        const seconds = Math.ceil(timeLeftMs / 1000);
+        return `Starting in ${seconds}s • Players: ${players}`;
+      case 'RUNNING':
+        return 'Dropping...';
+      default:
+        return 'Waiting for players...';
     }
   };
 
   return (
-    <div className="flex gap-6 p-6 h-[calc(100vh-120px)] md:h-[calc(100vh-88px)]">
+    <div className="flex gap-6 p-6 h-[calc(100vh-88px)]">
+      {/* Left Panel - Controls */}
       <Controls
         bet={bet}
         setBet={setBet}
@@ -218,6 +293,8 @@ export default function PlinkoPage() {
         disabled={isButtonDisabled()}
         buttonText={getButtonText()}
       />
+
+      {/* Center - Plinko Board */}
       <PlinkoBoard
         path={ballPath}
         isAnimating={isAnimating}
@@ -226,6 +303,8 @@ export default function PlinkoPage() {
         roundStatus={getRoundStatus()}
         previewBalls={previewBalls}
       />
+
+      {/* Right Panel - Sidebar */}
       <Sidebar
         balance={balance}
         houseProfit={houseProfit}
