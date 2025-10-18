@@ -258,7 +258,6 @@ app.prepare().then(() => {
           gameState.state = 'COUNTDOWN';
           gameState.timeLeftMs = 5000;
           
-          // Generate crash point untuk round berikutnya
           const rand = Math.random();
           gameState.targetCrash = rand < 0.65 ? 1.0 + Math.random() * 1.0 : 2.0 + Math.random() * 8.0;
           crashNsp.emit('_x', { _t: gameState.targetCrash });
