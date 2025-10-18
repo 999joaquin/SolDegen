@@ -82,7 +82,7 @@ export default function CrashPage() {
   const refreshBalance = async () => {
     if (!userId) return;
     try {
-      const balanceResponse = await fetch(`${API_BASE}/crash/balance/${userId}`);
+      const balanceResponse = await fetch(`${API_BASE}/api/crash/balance/${userId}`);
       const balanceData = await balanceResponse.json();
       setBalance(balanceData.balance);
     } catch (error) {
@@ -115,7 +115,20 @@ export default function CrashPage() {
   useEffect(() => {
     if (!userId) return;
 
+    const handleConnect = () => {
+      console.log('✅ Crash WebSocket connected');
+    };
+    
+    const handleDisconnect = () => {
+      console.log('❌ Crash WebSocket disconnected');
+    };
+    
+    const handleConnectError = (error: any) => {
+      console.error('❌ Crash WebSocket connection error:', error);
+    };
+
     const handleRoundUpdate = (update: any) => {
+      console.log('📦 Round update:', update);
       setState(update.state);
       if (update.state === 'COUNTDOWN') {
         setPlayers(update.players);
@@ -175,6 +188,9 @@ export default function CrashPage() {
       if (payload?.chips) setChips(payload.chips);
     };
 
+    crashSocket.on('connect', handleConnect);
+    crashSocket.on('disconnect', handleDisconnect);
+    crashSocket.on('connect_error', handleConnectError);
     crashSocket.on('round_update', handleRoundUpdate);
     crashSocket.on('joined', handleJoined);
     crashSocket.on('round_started', handleRoundStarted);
@@ -184,7 +200,14 @@ export default function CrashPage() {
     crashSocket.on('error', handleError);
     crashSocket.on('history_update', handleHistoryUpdate);
 
+    if (crashSocket.connected) {
+      console.log('✅ Crash WebSocket already connected');
+    }
+
     return () => {
+      crashSocket.off('connect', handleConnect);
+      crashSocket.off('disconnect', handleDisconnect);
+      crashSocket.off('connect_error', handleConnectError);
       crashSocket.off('round_update', handleRoundUpdate);
       crashSocket.off('joined', handleJoined);
       crashSocket.off('round_started', handleRoundStarted);
@@ -264,6 +287,23 @@ export default function CrashPage() {
   const getRocketPosition = () => {
     const progress = Math.min((multiplier - 1) * 20, 80);
     return `${progress}%`;
+  };
+
+  const getRocketVerticalPosition = () => {
+    // Roket naik sesuai multiplier (1x = bottom, 10x+ = top)
+    // Bottom = 0%, Top = 100%
+    const maxMultiplier = 10;
+    const verticalProgress = Math.min(((multiplier - 1) / (maxMultiplier - 1)) * 100, 100);
+    return `${verticalProgress}%`;
+  };
+
+  const getRocketRotation = () => {
+    // Rotate dinamis: semakin tinggi multiplier, semakin miring ke atas
+    // 1x = -20deg (sedikit miring), 10x+ = -60deg (miring tajam)
+    const baseRotation = -20;
+    const maxRotation = -60;
+    const rotationProgress = Math.min((multiplier - 1) / 9, 1); // 0 to 1
+    return baseRotation + (maxRotation - baseRotation) * rotationProgress;
   };
 
   return (
@@ -388,12 +428,40 @@ export default function CrashPage() {
           }}
         />
 
-        <div className="absolute bottom-20 left-4 right-4 h-20 z-10">
-          <div className="absolute bottom-0 transition-all duration-100 ease-out" style={{ left: getRocketPosition() }}>
-            <div className="w-12 h-12 bg-gradient-to-r from-blue-400 to-purple-500 rounded-full flex items-center justify-center shadow-lg shadow-blue-500/50">🚀</div>
-            {state === 'RUNNING' && (
-              <div className="absolute -left-8 top-1/2 transform -translate-y-1/2 w-16 h-2 bg-gradient-to-r from-transparent via-blue-400 to-purple-500 opacity-70 blur-sm"></div>
-            )}
+        <div className="absolute bottom-0 left-0 right-0 top-0 z-10">
+          <div 
+            className="absolute transition-all duration-100 ease-out" 
+            style={{ 
+              left: getRocketPosition(),
+              bottom: getRocketVerticalPosition(),
+              transform: 'translate(-50%, 50%)'
+            }}
+          >
+            <div 
+              className="relative"
+              style={{
+                transform: `rotate(${getRocketRotation()}deg)`,
+                transition: 'transform 0.1s ease-out'
+              }}
+            >
+              <img 
+                src="/rocket.png" 
+                alt="rocket"
+                className="w-16 h-16 drop-shadow-lg relative z-10"
+                style={{
+                  filter: 'drop-shadow(0 0 10px rgba(59, 130, 246, 0.8))'
+                }}
+              />
+              {state === 'RUNNING' && (
+                <div 
+                  className="absolute top-1/2 -translate-y-1/2 w-20 h-3 bg-gradient-to-r from-transparent via-orange-500 to-red-600 opacity-80 blur-md"
+                  style={{
+                    right: '100%',
+                    marginRight: '-4px'
+                  }}
+                ></div>
+              )}
+            </div>
           </div>
         </div>
 

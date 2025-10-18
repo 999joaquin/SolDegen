@@ -42,11 +42,11 @@ export default function Sidebar({
         <div className="space-y-3 text-sm">
           <div className="flex justify-between">
             <span className="text-zinc-400">Balance:</span>
-            <span className="text-lime-400 text-xl font-bold">{balance.toFixed(2)} SOL</span>
+            <span className="text-lime-400 text-xl font-bold">{balance?.toFixed(2) || '0.00'} SOL</span>
           </div>
           <div className="flex justify-between">
             <span className="text-zinc-400">House Profit:</span>
-            <span className="text-lime-400 font-mono">{houseProfit.toFixed(2)} SOL</span>
+            <span className="text-lime-400 font-mono">{houseProfit?.toFixed(2) || '0.00'} SOL</span>
           </div>
           <div className="mt-2 text-xs text-zinc-500">
             <div>Server Seed Hash:</div>

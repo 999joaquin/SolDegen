@@ -22,7 +22,7 @@ export interface StatsData {
 }
 
 export async function getFair(): Promise<FairData> {
-  const response = await fetch(`${API}/fair/current`);
+  const response = await fetch(`${API}/api/fair/current`);
   if (!response.ok) {
     throw new Error('Failed to fetch fair data');
   }
@@ -35,7 +35,7 @@ export async function getBalance(userId?: number): Promise<BalanceData> {
     headers['x-user-id'] = String(userId);
   }
   
-  const response = await fetch(`${API}/demo/balance`, { headers });
+  const response = await fetch(`${API}/api/demo/balance`, { headers });
   if (!response.ok) {
     throw new Error('Failed to fetch balance');
   }
@@ -43,7 +43,7 @@ export async function getBalance(userId?: number): Promise<BalanceData> {
 }
 
 export async function getStats(): Promise<StatsData> {
-  const response = await fetch(`${API}/demo/stats`);
+  const response = await fetch(`${API}/api/demo/stats`);
   if (!response.ok) {
     throw new Error('Failed to fetch stats');
   }

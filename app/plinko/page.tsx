@@ -112,20 +112,16 @@ export default function PlinkoPage() {
 
     const handleRoundStarted = (data: { roundId: string; lockedPlayers: number; startedAt: number }) => {
       setRoundState('RUNNING');
-      const colors = ['#ef4444','#3b82f6','#10b981','#f59e0b','#8b5cf6','#ec4899','#14b8a6','#f97316'];
-      const balls: PreviewBall[] = Array.from({ length: data.lockedPlayers }, (_, i) => ({
-        id: `preview-${Date.now()}-${i}`,
-        color: colors[i % colors.length],
-        x: 0.5 + (i - (data.lockedPlayers - 1) / 2) * 0.05,
-        y: 0,
-        assigned: false,
-        state: 'falling' as const,
-      }));
-      setPreviewBalls(balls);
+      // Reset preview balls saat round dimulai
+      setPreviewBalls([]);
     };
 
     const handleYourResult = (result: BetResult & { roundId: string }) => {
+      console.log('Result received:', result, 'My userId:', userId);
+      
+      // HANYA proses jika ini benar-benar bola saya
       if (result.userId === userId) {
+        // Ini bola saya - tampilkan animasi penuh
         setLastResult(result);
         setBetHistory(prev => [...prev, result]);
         setBallPath(result.path);
@@ -133,29 +129,19 @@ export default function PlinkoPage() {
         setBalance(result.balanceAfter);
         setIsAnimating(true);
         refreshBalanceAndStats();
-        setPreviewBalls(prev => {
-          const idx = prev.findIndex(b => !b.assigned);
-          if (idx === -1) return prev;
-          const next = [...prev];
-          next[idx] = { ...prev[idx], assigned: true, targetBin: result.bin, multiplier: result.multiplier };
-          return next;
-        });
-      } else {
-        setPreviewBalls(prev => {
-          const idx = prev.findIndex(b => !b.assigned);
-          if (idx === -1) return prev;
-          const next = [...prev];
-          next[idx] = { ...prev[idx], assigned: true, targetBin: result.bin, multiplier: result.multiplier };
-          return next;
-        });
       }
+      // JANGAN tampilkan preview untuk user lain di client ini
+      // Nanti akan diperbaiki dengan event terpisah dari server
     };
 
     const handleRoundFinished = () => {
       setTimeout(() => {
         setJoined(false);
         setPreviewBalls([]);
-      }, 600);
+        setIsAnimating(false);
+        setBallPath([]);
+        setFinalBin(undefined);
+      }, 1000);
     };
 
     socket.on('round_update', handleRoundUpdate);

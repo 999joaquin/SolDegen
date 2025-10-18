@@ -41,22 +41,36 @@ export default function CrashChat({ userId, username = `Player${userId}` }: Cras
   useEffect(() => { scrollToBottom(); }, [messages]);
 
   useEffect(() => {
-    const handleConnect = () => setIsConnected(true);
-    const handleDisconnect = () => setIsConnected(false);
+    const handleConnect = () => {
+      console.log('✅ Chat WebSocket connected');
+      setIsConnected(true);
+    };
+    const handleDisconnect = () => {
+      console.log('❌ Chat WebSocket disconnected');
+      setIsConnected(false);
+    };
+    const handleConnectError = (error: any) => {
+      console.error('❌ Chat WebSocket connection error:', error);
+    };
     const handleChatMessage = (data: ChatMessage) => setMessages(prev => [...prev, data]);
     const handleChatHistory = (history: ChatMessage[]) => setMessages(history);
 
     crashSocket.on('connect', handleConnect);
     crashSocket.on('disconnect', handleDisconnect);
+    crashSocket.on('connect_error', handleConnectError);
     crashSocket.on('chat_message', handleChatMessage);
     crashSocket.on('chat_history', handleChatHistory);
 
-    if (crashSocket.connected) setIsConnected(true);
+    if (crashSocket.connected) {
+      console.log('✅ Chat WebSocket already connected');
+      setIsConnected(true);
+    }
     crashSocket.emit('get_chat_history');
 
     return () => {
       crashSocket.off('connect', handleConnect);
       crashSocket.off('disconnect', handleDisconnect);
+      crashSocket.off('connect_error', handleConnectError);
       crashSocket.off('chat_message', handleChatMessage);
       crashSocket.off('chat_history', handleChatHistory);
     };
