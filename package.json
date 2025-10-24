@@ -4,6 +4,7 @@
   "version": "0.0.1",
   "scripts": {
     "dev": "node server.js",
+    "dev:physics": "cd python-backend && python main.py",
     "build": "next build",
     "start": "NODE_ENV=production node server.js",
     "lint": "next lint"

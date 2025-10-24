@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import Controls from '@/components/Controls';
 import PlinkoBoard from '@/components/PlinkoBoard';
 import Sidebar from '@/components/Sidebar';
@@ -117,28 +117,69 @@ export default function PlinkoPage() {
     };
 
     const handleYourResult = (result: BetResult & { roundId: string }) => {
-      console.log('Result received:', result, 'My userId:', userId);
+      console.log('✅ Result received:', result, 'My userId:', userId);
       
       // HANYA proses jika ini benar-benar bola saya
       if (result.userId === userId) {
         // Ini bola saya - tampilkan animasi penuh
+        console.log('🎯 This is MY ball - starting animation');
+        console.log('📊 Path data:', result.path);
+        console.log('📊 Bin:', result.bin);
+        
+        // IMPORTANT: Set semua data dulu
+        console.log('🔄 Step 1: Setting ballPath to:', result.path);
+        setBallPath(result.path);
+        
+        console.log('🔄 Step 2: Setting finalBin to:', result.bin);
+        setFinalBin(result.bin);
+        
         setLastResult(result);
         setBetHistory(prev => [...prev, result]);
-        setBallPath(result.path);
-        setFinalBin(result.bin);
         setBalance(result.balanceAfter);
-        setIsAnimating(true);
+        
+        // CRITICAL: Delay animation start sedikit agar state ter-update dulu
+        console.log('🔄 Step 3: Triggering animation in 10ms...');
+        setTimeout(() => {
+          console.log('🚀🚀🚀 ANIMATION START NOW! - Setting isAnimating to TRUE');
+          setIsAnimating(true);
+        }, 10);
+        
         refreshBalanceAndStats();
       }
-      // JANGAN tampilkan preview untuk user lain di client ini
-      // Nanti akan diperbaiki dengan event terpisah dari server
+    };
+
+    const handlePreviewBall = (data: any) => {
+      console.log('👁️ Preview ball received:', data, 'My userId:', userId);
+      
+      // HANYA tampilkan preview jika ini bukan bola saya
+      if (data.userId !== userId) {
+        console.log('👀 Adding preview ball for other player');
+        const previewBall: PreviewBall = {
+          id: data.ballId,
+          color: data.color,
+          x: data.startX,
+          y: data.startY,
+          assigned: true,
+          state: 'falling',
+          targetBin: data.targetBin,
+          multiplier: data.multiplier
+        };
+        
+        setPreviewBalls(prev => [...prev, previewBall]);
+        
+        // Remove preview setelah 3 detik (durasi animasi)
+        setTimeout(() => {
+          setPreviewBalls(prev => prev.filter(b => b.id !== data.ballId));
+        }, 3000);
+      }
     };
 
     const handleRoundFinished = () => {
       setTimeout(() => {
         setJoined(false);
         setPreviewBalls([]);
-        setIsAnimating(false);
+        // DON'T reset isAnimating here - let physics animation complete naturally
+        // setIsAnimating(false); 
         setBallPath([]);
         setFinalBin(undefined);
       }, 1000);
@@ -148,6 +189,7 @@ export default function PlinkoPage() {
     socket.on('joined', handleJoined);
     socket.on('round_started', handleRoundStarted);
     socket.on('your_result', handleYourResult);
+    socket.on('preview_ball', handlePreviewBall);
     socket.on('round_finished', handleRoundFinished);
 
     return () => {
@@ -155,6 +197,7 @@ export default function PlinkoPage() {
       socket.off('joined', handleJoined);
       socket.off('round_started', handleRoundStarted);
       socket.off('your_result', handleYourResult);
+      socket.off('preview_ball', handlePreviewBall);
       socket.off('round_finished', handleRoundFinished);
     };
   }, [userId]);
@@ -173,7 +216,9 @@ export default function PlinkoPage() {
     socket.emit('join_round', { userId, bet, risk: FIXED_RISK, rows: FIXED_ROWS, clientSeed });
   };
 
-  const handleAnimationComplete = () => setIsAnimating(false);
+  const handleAnimationComplete = useCallback(() => {
+    setIsAnimating(false);
+  }, []);
 
   const getButtonText = () => {
     if (roundState === 'RUNNING') return 'Dropping...';
@@ -194,33 +239,35 @@ export default function PlinkoPage() {
   };
 
   return (
-    <div className="flex gap-6 p-6 h-[calc(100vh-120px)] md:h-[calc(100vh-88px)]">
-      <Controls
-        bet={bet}
-        setBet={setBet}
-        clientSeed={clientSeed}
-        setClientSeed={setClientSeed}
-        onJoinRound={handleJoinRound}
-        disabled={isButtonDisabled()}
-        buttonText={getButtonText()}
-      />
-      <PlinkoBoard
-        path={ballPath}
-        isAnimating={isAnimating}
-        onAnimationComplete={handleAnimationComplete}
-        finalBin={finalBin}
-        roundStatus={getRoundStatus()}
-        previewBalls={previewBalls}
-      />
-      <Sidebar
-        balance={balance}
-        houseProfit={houseProfit}
-        serverSeedHash={serverSeedHash}
-        lastResult={lastResult}
-        betHistory={betHistory}
-        userId={userId}
-        username={username}
-      />
+    <div className="min-h-[calc(100vh-120px)] md:min-h-[calc(100vh-88px)] w-full pb-10">
+      <div className="grid w-full gap-6 grid-cols-1 md:grid-cols-[20rem_minmax(0,1fr)] lg:grid-cols-[20rem_minmax(0,1fr)_20rem]">
+        <Controls
+          bet={bet}
+          setBet={setBet}
+          clientSeed={clientSeed}
+          setClientSeed={setClientSeed}
+          onJoinRound={handleJoinRound}
+          disabled={isButtonDisabled()}
+          buttonText={getButtonText()}
+        />
+        <PlinkoBoard
+          path={ballPath}
+          isAnimating={isAnimating}
+          onAnimationComplete={handleAnimationComplete}
+          finalBin={finalBin}
+          roundStatus={getRoundStatus()}
+          previewBalls={previewBalls}
+        />
+        <Sidebar
+          balance={balance}
+          houseProfit={houseProfit}
+          serverSeedHash={serverSeedHash}
+          lastResult={lastResult}
+          betHistory={betHistory}
+          userId={userId}
+          username={username}
+        />
+      </div>
     </div>
   );
 }

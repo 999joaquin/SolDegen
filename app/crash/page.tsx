@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { crashSocket } from '@/lib/crashSocket';
 import { getCrashFair, getCrashStats, getCrashHistoryDedup, getCrashRoundDetail } from '@/lib/crashApi';
 import CrashChat from '@/components/CrashChat';
@@ -41,6 +41,9 @@ export default function CrashPage() {
   const [joined, setJoined] = useState(false);
   const [cashed, setCashed] = useState(false);
   const [cashoutPending, setCashoutPending] = useState(false);
+  const [isCrashed, setIsCrashed] = useState(false);
+  const [explosionPosition, setExplosionPosition] = useState<{ left: number; top: number } | null>(null);
+  const [displayMultiplier, setDisplayMultiplier] = useState(1.0);
 
   const [serverSeedHash, setServerSeedHash] = useState('');
   const [lastCrashMultiplier, setLastCrashMultiplier] = useState(0);
@@ -138,6 +141,7 @@ export default function CrashPage() {
         setMultiplier(update.multiplier);
       } else {
         setMultiplier(1.00);
+        setDisplayMultiplier(1.0);
       }
     };
 
@@ -150,6 +154,9 @@ export default function CrashPage() {
       setState('RUNNING');
       setCashed(false);
       setCashoutPending(false);
+      setIsCrashed(false);
+      setExplosionPosition(null);
+      setDisplayMultiplier(1.0);
     };
 
     const handleCashedOut = (data: any) => {
@@ -165,6 +172,10 @@ export default function CrashPage() {
       setMultiplier(data.crashMultiplier);
       setLastCrashMultiplier(data.crashMultiplier);
       setCashoutPending(false);
+      const coords = getRocketCoordinates(data.crashMultiplier);
+      setIsCrashed(true);
+      setExplosionPosition(coords);
+      setTimeout(() => setExplosionPosition(null), 1200);
       showToast(`CRASHED at ${data.crashMultiplier.toFixed(2)}×`, 'error');
     };
 
@@ -173,7 +184,10 @@ export default function CrashPage() {
         setState('IDLE');
         setJoined(false);
         setMultiplier(1.00);
+        setDisplayMultiplier(1.0);
         setCashoutPending(false);
+        setIsCrashed(false);
+        setExplosionPosition(null);
         loadInitialData();
         refreshBalance();
       }, 600);
@@ -259,6 +273,31 @@ export default function CrashPage() {
     }
   }, [auto, state, cashed, multiplier]);
 
+  useEffect(() => {
+    let rafId: number | null = null;
+    if (state === 'RUNNING' && !isCrashed) {
+      const animate = () => {
+        setDisplayMultiplier(prev => {
+          const target = multiplier;
+          const diff = target - prev;
+          if (Math.abs(diff) < 0.005) {
+            return target;
+          }
+          const step = diff * 0.18;
+          return prev + step;
+        });
+        rafId = requestAnimationFrame(animate);
+      };
+      rafId = requestAnimationFrame(animate);
+    } else {
+      setDisplayMultiplier(multiplier);
+    }
+
+    return () => {
+      if (rafId) cancelAnimationFrame(rafId);
+    };
+  }, [multiplier, state, isCrashed]);
+
   const showToast = (message: string, type: 'success' | 'error' | 'info') => {
     setToast({ message, type });
     setTimeout(() => setToast(null), 3000);
@@ -284,30 +323,50 @@ export default function CrashPage() {
     }
   };
 
-  const getRocketPosition = () => {
-    const progress = Math.min((multiplier - 1) * 20, 80);
-    return `${progress}%`;
+  const MAX_MULTIPLIER_DISPLAY = 10;
+  const rulerMarks = useMemo(() => [1, 1.2, 1.5, 2, 2.5, 3, 4, 5, 7, 10], []);
+  const clamp01 = (value: number) => Math.min(Math.max(value, 0), 1);
+
+  const getProgress = (value = displayMultiplier) => {
+    const min = 1;
+    const max = MAX_MULTIPLIER_DISPLAY;
+    const clamped = Math.min(Math.max(value, min), max);
+    const range = Math.log(max / min);
+    const progress = range === 0 ? 0 : Math.log(clamped / min) / range;
+    return clamp01(progress);
   };
 
-  const getRocketVerticalPosition = () => {
-    // Roket naik sesuai multiplier (1x = bottom, 10x+ = top)
-    // Bottom = 0%, Top = 100%
-    const maxMultiplier = 10;
-    const verticalProgress = Math.min(((multiplier - 1) / (maxMultiplier - 1)) * 100, 100);
-    return `${verticalProgress}%`;
+  const getVerticalPercent = (value: number) => {
+    const progress = getProgress(value);
+    return 90 - progress * 80;
+  };
+
+  const getRocketCoordinates = (value = displayMultiplier) => {
+    const progress = getProgress(value);
+    // Beri margin 8% supaya tidak menempel di sisi layar
+    const horizontal = 8 + progress * 84; // 8% -> 92%
+    // 90% = dekat bawah, 10% = dekat atas (sinkron dengan penggaris kanan)
+    const vertical = 90 - progress * 80; // 1x≈90%, 10x≈10%
+    return { left: horizontal, top: vertical };
+  };
+
+  const getRocketStyle = () => {
+    const { left, top } = getRocketCoordinates();
+    return {
+      left: `${left}%`,
+      top: `${top}%`
+    };
   };
 
   const getRocketRotation = () => {
-    // Rotate dinamis: semakin tinggi multiplier, semakin miring ke atas
-    // 1x = -20deg (sedikit miring), 10x+ = -60deg (miring tajam)
-    const baseRotation = -20;
+    const progress = getProgress();
+    const baseRotation = -18;
     const maxRotation = -60;
-    const rotationProgress = Math.min((multiplier - 1) / 9, 1); // 0 to 1
-    return baseRotation + (maxRotation - baseRotation) * rotationProgress;
+    return baseRotation + (maxRotation - baseRotation) * progress;
   };
 
   return (
-    <div className="flex gap-6 p-6 h-[calc(100vh-120px)] md:h-[calc(100vh-88px)]">
+    <div className="relative min-h-[calc(100vh-120px)] md:min-h-[calc(100vh-88px)] w-full pb-10">
       {toast && (
         <div className={`fixed top-20 right-6 z-50 px-4 py-2 rounded-lg text-white font-semibold ${
           toast.type === 'success' ? 'bg-green-600' : toast.type === 'error' ? 'bg-red-600' : 'bg-blue-600'
@@ -316,7 +375,8 @@ export default function CrashPage() {
         </div>
       )}
 
-      <div className="w-80 space-y-4">
+  <div className="grid w-full gap-6 grid-cols-1 md:grid-cols-[20rem_minmax(0,1fr)] lg:grid-cols-[20rem_minmax(0,1fr)_20rem]">
+  <div className="w-full md:w-80 space-y-4">
         <div className="rounded-2xl bg-zinc-900/70 border border-zinc-800 p-4">
           <h3 className="text-lg font-semibold mb-4">Bet Amount</h3>
           <div className="space-y-3">
@@ -382,9 +442,9 @@ export default function CrashPage() {
             {cashed ? 'Cashed Out' : cashoutPending ? 'Cashing out…' : 'Cashout'}
           </button>
         </div>
-      </div>
+        </div>
 
-      <div className="flex-1 rounded-2xl bg-zinc-900/70 border border-zinc-800 p-6 relative overflow-hidden">
+  <div className="flex-1 h-full rounded-2xl bg-zinc-900/70 border border-zinc-800 p-6 relative overflow-hidden">
         <div className="absolute top-6 left-6 right-6 z-30 pointer-events-none">
           <div className="flex gap-2 overflow-x-auto pb-2 -mt-2 pointer-events-auto">
             {chips.map((c) => {
@@ -428,54 +488,95 @@ export default function CrashPage() {
           }}
         />
 
-        <div className="absolute bottom-0 left-0 right-0 top-0 z-10">
-          <div 
-            className="absolute transition-all duration-100 ease-out" 
-            style={{ 
-              left: getRocketPosition(),
-              bottom: getRocketVerticalPosition(),
-              transform: 'translate(-50%, 50%)'
-            }}
-          >
+        <div className="absolute inset-0 z-10">
+          {!isCrashed && (
             <div 
-              className="relative"
-              style={{
-                transform: `rotate(${getRocketRotation()}deg)`,
-                transition: 'transform 0.1s ease-out'
+              className="absolute transition-all duration-150 ease-out" 
+              style={{ 
+                ...getRocketStyle(),
+                transform: 'translate(-50%, -50%)'
               }}
             >
-              <img 
-                src="/rocket.png" 
-                alt="rocket"
-                className="w-16 h-16 drop-shadow-lg relative z-10"
+              <div 
+                className="relative"
                 style={{
-                  filter: 'drop-shadow(0 0 10px rgba(59, 130, 246, 0.8))'
+                  transform: `rotate(${getRocketRotation()}deg)`,
+                  transition: 'transform 0.12s ease-out'
                 }}
-              />
-              {state === 'RUNNING' && (
-                <div 
-                  className="absolute top-1/2 -translate-y-1/2 w-20 h-3 bg-gradient-to-r from-transparent via-orange-500 to-red-600 opacity-80 blur-md"
+              >
+                <img 
+                  src="/rocket.png" 
+                  alt="rocket"
+                  className="w-16 h-16 drop-shadow-lg relative z-10"
                   style={{
-                    right: '100%',
-                    marginRight: '-4px'
+                    filter: 'drop-shadow(0 0 10px rgba(59, 130, 246, 0.8))'
                   }}
-                ></div>
-              )}
+                />
+                {state === 'RUNNING' && (
+                  <div 
+                    className="absolute top-1/2 -translate-y-1/2 w-20 h-3 bg-gradient-to-r from-transparent via-orange-500 to-red-600 opacity-80 blur-md"
+                    style={{
+                      right: '100%',
+                      marginRight: '-4px'
+                    }}
+                  ></div>
+                )}
+              </div>
+            </div>
+          )}
+
+          {explosionPosition && (
+            <div
+              className="absolute pointer-events-none"
+              style={{
+                left: `${explosionPosition.left}%`,
+                top: `${explosionPosition.top}%`,
+                transform: 'translate(-50%, -50%)'
+              }}
+            >
+              <div className="explosion" />
+            </div>
+          )}
+        </div>
+
+        <div className="absolute right-6 top-20 bottom-20 text-zinc-500 text-xs pointer-events-none">
+          <div className="relative w-16 h-full">
+            <div className="absolute inset-y-0 right-6 border-r border-zinc-700/60" />
+            {rulerMarks.map((mark) => {
+              const topPercent = getVerticalPercent(mark);
+              return (
+                <div
+                  key={mark}
+                  className="absolute flex items-center gap-2"
+                  style={{
+                    top: `${topPercent}%`,
+                    right: 0,
+                    transform: 'translateY(-50%)'
+                  }}
+                >
+                  <div className="w-3 h-px bg-zinc-600" />
+                  <span>{mark.toFixed(Number.isInteger(mark) ? 0 : 1)}×</span>
+                </div>
+              );
+            })}
+
+            <div
+              className="absolute right-[-12px] flex items-center gap-2 text-lime-400 font-semibold"
+              style={{
+                top: `${getVerticalPercent(displayMultiplier)}%`,
+                transform: 'translateY(-50%)'
+              }}
+            >
+              <div className="w-4 h-[2px] bg-lime-400 shadow-[0_0_6px_rgba(132,204,22,0.8)]" />
+              <span className="text-sm bg-zinc-900/90 px-1.5 py-0.5 rounded-md border border-lime-400/40">
+                {displayMultiplier.toFixed(2)}×
+              </span>
             </div>
           </div>
         </div>
-
-        <div className="absolute right-6 top-20 bottom-20 flex flex-col justify-between text-zinc-500 text-sm">
-          {[10, 5, 3, 2, 1.5, 1].map(mark => (
-            <div key={mark} className="flex items-center">
-              <div className="w-2 h-px bg-zinc-600 mr-2"></div>
-              <span>{mark}×</span>
-            </div>
-          ))}
         </div>
-      </div>
 
-      <div className="w-80 space-y-4">
+  <div className="w-full md:w-80 space-y-4">
         <div className="rounded-2xl bg-zinc-900/70 border border-zinc-800 p-4">
           <h3 className="text-lg font-semibold mb-4">Game Stats</h3>
           <div className="space-y-3 text-sm">
@@ -512,8 +613,9 @@ export default function CrashPage() {
         </div>
 
         {userId && <CrashChat userId={userId} username={`Player${userId}`} />}
+        </div>
       </div>
-      
+
       {selectedRoundId && (
         <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50" onClick={(e) => {
           if (e.target === e.currentTarget) { setSelectedRoundId(null); setRoundDetail(null); }

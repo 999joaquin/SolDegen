@@ -39,7 +39,7 @@ export default function Controls({
   };
 
   return (
-    <div className="w-80 bg-gray-900 p-6 rounded-2xl shadow-lg space-y-6">
+  <div className="w-full md:w-80 bg-gray-900 p-6 rounded-2xl shadow-lg space-y-6">
       <h2 className="text-white text-xl font-semibold">Controls</h2>
       <div className="space-y-3">
         <label className="text-white text-sm font-medium">Bet Amount (SOL)</label>

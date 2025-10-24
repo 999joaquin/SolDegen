@@ -36,7 +36,7 @@ export default function Sidebar({
   username,
 }: SidebarProps) {
   return (
-    <div className="w-80 space-y-4">
+  <div className="w-full md:w-80 space-y-4">
       <div className="rounded-2xl bg-zinc-900/70 border border-zinc-800 p-4">
         <h3 className="text-lg font-semibold mb-4">Game Stats</h3>
         <div className="space-y-3 text-sm">
