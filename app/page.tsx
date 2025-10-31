@@ -44,7 +44,7 @@ export default function ComingSoonPage() {
           alt="SolDrop Logo"
           className="h-24 md:h-32 mx-auto mb-6 animate-pulse-subtle"
         />
-        <h1 className="text-3xl md:text-4xl font-bold text-purple-200 mb-3">SolDrop is coming soon</h1>
+        <h1 className="text-3xl md:text-4xl font-bold text-purple-200 mb-3">SolDegen is coming soon</h1>
         <p className="text-purple-300 mb-8">
           We're polishing the experience. Leave your email and we'll notify you the moment we launch.
         </p>
