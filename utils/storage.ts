@@ -4,6 +4,23 @@ export type CachedProfile = { username: string; email: string; };
 
 const keyFor = (address: string) => `profile:${address}`;
 
+// ADD: auto-connect flag helpers
+const AUTO_CONNECT_KEY = "wallet:autoConnectDisabled";
+
+export function setAutoConnectDisabled(disabled: boolean) {
+  try {
+    localStorage.setItem(AUTO_CONNECT_KEY, disabled ? "1" : "0");
+  } catch {}
+}
+
+export function isAutoConnectDisabled(): boolean {
+  try {
+    return localStorage.getItem(AUTO_CONNECT_KEY) === "1";
+  } catch {
+    return false;
+  }
+}
+
 export function saveProfile(address: string, profile: CachedProfile) {
   if (!address) return;
   try {
