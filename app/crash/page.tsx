@@ -7,6 +7,14 @@ import CrashChat from '@/components/CrashChat';
 
 type CrashState = 'IDLE' | 'COUNTDOWN' | 'RUNNING';
 type Chip = { multiplier: number; count: number; rounds: string[]; losers: { userId:number; bet:number }[] };
+type RoundPlayerSnapshot = {
+  id: number | string;
+  username: string;
+  bet: number | null;
+  cashoutMultiplier: number | null;
+  payout: number | null;
+  status: 'IN_PLAY' | 'CASHED' | 'BUSTED';
+};
 
 interface HistoryItemFull {
   roundId: string;
@@ -56,6 +64,7 @@ export default function CrashPage() {
   const [selectedRoundId, setSelectedRoundId] = useState<string | null>(null);
   const [roundDetail, setRoundDetail] = useState<any | null>(null);
   const [loadingDetail, setLoadingDetail] = useState(false);
+  const [roundPlayers, setRoundPlayers] = useState<RoundPlayerSnapshot[]>([]);
 
   useEffect(() => {
     const saved = typeof window !== 'undefined' ? localStorage.getItem('crash_history') : null;
@@ -134,14 +143,65 @@ export default function CrashPage() {
       console.log('📦 Round update:', update);
       setState(update.state);
       if (update.state === 'COUNTDOWN') {
-        setPlayers(update.players);
+        if (typeof update.players === 'number') setPlayers(update.players);
         setTimeLeftMs(update.timeLeftMs);
       } else if (update.state === 'RUNNING') {
-        setPlayers(update.players);
+        if (typeof update.players === 'number') setPlayers(update.players);
         setMultiplier(update.multiplier);
       } else {
         setMultiplier(1.00);
         setDisplayMultiplier(1.0);
+      }
+
+      const playerArrays = ['playerDetails', 'playersDetailed', 'playersList', 'playerStates', 'playersInfo', 'currentPlayers'];
+      let extracted: any[] | null = null;
+      for (const key of playerArrays) {
+        const candidate = update?.[key];
+        if (Array.isArray(candidate)) {
+          extracted = candidate;
+          break;
+        }
+      }
+
+      if (Array.isArray(update?.players) && !extracted) {
+        extracted = update.players;
+      }
+
+      if (extracted) {
+        const normalised = extracted.map((raw) => {
+          const toNumber = (value: any) => {
+            if (typeof value === 'number' && Number.isFinite(value)) return value;
+            const coerced = Number(value);
+            return Number.isFinite(coerced) ? coerced : null;
+          };
+
+          const id = raw?.userId ?? raw?.id ?? raw?.playerId ?? raw?.user ?? raw?.wallet ?? raw?.address ?? '-';
+          const username = raw?.username ?? raw?.name ?? (typeof id === 'number' ? `Player ${id}` : `Player ${String(id).slice(-4)}`);
+          const bet = toNumber(raw?.bet ?? raw?.wager ?? raw?.amount ?? raw?.stake ?? raw?.entry);
+          const cashoutMultiplier = toNumber(raw?.cashoutMultiplier ?? raw?.cashout_at ?? raw?.cashedOutAt ?? raw?.cashedOut?.atMultiplier);
+          const payout = toNumber(raw?.payout ?? raw?.win ?? raw?.return ?? raw?.profit ?? raw?.cashedOut?.payout);
+          const statusSource = raw?.status ?? raw?.phase ?? (cashoutMultiplier !== null ? 'CASHED' : 'IN_PLAY');
+          const statusText = typeof statusSource === 'string' ? statusSource.toUpperCase() : '';
+          const status: 'IN_PLAY' | 'CASHED' | 'BUSTED' = statusText.includes('CASH')
+            ? 'CASHED'
+            : statusText.includes('BUST') || statusText.includes('LOSE')
+              ? 'BUSTED'
+              : 'IN_PLAY';
+
+          return {
+            id,
+            username,
+            bet,
+            cashoutMultiplier,
+            payout,
+            status
+          } as RoundPlayerSnapshot;
+        });
+
+        setRoundPlayers(normalised);
+        if (typeof update.players !== 'number') {
+          setPlayers(normalised.length);
+        }
       }
     };
 
@@ -157,6 +217,7 @@ export default function CrashPage() {
       setIsCrashed(false);
       setExplosionPosition(null);
       setDisplayMultiplier(1.0);
+      setRoundPlayers([]);
     };
 
     const handleCashedOut = (data: any) => {
@@ -166,6 +227,17 @@ export default function CrashPage() {
         showToast(`You cashed out at ${data.atMultiplier.toFixed(2)}×`, 'success');
         refreshBalance();
       }
+      setRoundPlayers(prev => prev.map(player => {
+        if (String(player.id) === String(data.userId)) {
+          return {
+            ...player,
+            cashoutMultiplier: typeof data.atMultiplier === 'number' ? data.atMultiplier : player.cashoutMultiplier,
+            payout: typeof data.payout === 'number' ? data.payout : player.payout,
+            status: 'CASHED'
+          };
+        }
+        return player;
+      }));
     };
 
     const handleCrashed = (data: any) => {
@@ -177,6 +249,7 @@ export default function CrashPage() {
       setExplosionPosition(coords);
       setTimeout(() => setExplosionPosition(null), 1200);
       showToast(`CRASHED at ${data.crashMultiplier.toFixed(2)}×`, 'error');
+      setRoundPlayers(prev => prev.map(player => player.status === 'CASHED' ? player : { ...player, status: 'BUSTED' }));
     };
 
     const handleRoundFinished = () => {
@@ -188,6 +261,7 @@ export default function CrashPage() {
         setCashoutPending(false);
         setIsCrashed(false);
         setExplosionPosition(null);
+        setRoundPlayers([]);
         loadInitialData();
         refreshBalance();
       }, 600);
@@ -280,11 +354,7 @@ export default function CrashPage() {
         setDisplayMultiplier(prev => {
           const target = multiplier;
           const diff = target - prev;
-          if (Math.abs(diff) < 0.005) {
-            return target;
-          }
-          const step = diff * 0.18;
-          return prev + step;
+          return Math.abs(diff) < 0.003 ? target : prev + diff * 0.2;
         });
         rafId = requestAnimationFrame(animate);
       };
@@ -306,6 +376,21 @@ export default function CrashPage() {
   const handleJoinRound = () => {
     if (!userId) return;
     crashSocket.emit('join_round', { userId, bet, clientSeed });
+    setRoundPlayers(prev => {
+      const exists = prev.some(player => String(player.id) === String(userId));
+      if (exists) return prev;
+      return [
+        ...prev,
+        {
+          id: userId,
+          username: `Player ${userId}`,
+          bet,
+          cashoutMultiplier: null,
+          payout: null,
+          status: 'IN_PLAY'
+        }
+      ];
+    });
   };
 
   const handleCashout = () => {
@@ -323,30 +408,33 @@ export default function CrashPage() {
     }
   };
 
-  const MAX_MULTIPLIER_DISPLAY = 10;
-  const rulerMarks = useMemo(() => [1, 1.2, 1.5, 2, 2.5, 3, 4, 5, 7, 10], []);
   const clamp01 = (value: number) => Math.min(Math.max(value, 0), 1);
 
-  const getProgress = (value = displayMultiplier) => {
+  const formatMultiplier = (value: number) => {
+    if (Number.isInteger(value)) return value.toFixed(0);
+    if (Math.abs(value * 10 - Math.round(value * 10)) < 1e-6) return value.toFixed(1);
+    return value.toFixed(2);
+  };
+
+  const MAX_DISPLAY = 10;
+  const rulerMarks = useMemo(() => [1, 1.5, 2, 2.5, 3, 4, 5, 6, 7, 8, 9, 10], []);
+
+  const getProgress = (value: number) => {
     const min = 1;
-    const max = MAX_MULTIPLIER_DISPLAY;
+    const max = MAX_DISPLAY;
     const clamped = Math.min(Math.max(value, min), max);
     const range = Math.log(max / min);
-    const progress = range === 0 ? 0 : Math.log(clamped / min) / range;
-    return clamp01(progress);
+    return range === 0 ? 0 : clamp01(Math.log(clamped / min) / range);
   };
 
   const getVerticalPercent = (value: number) => {
-    const progress = getProgress(value);
-    return 90 - progress * 80;
+    return 90 - getProgress(value) * 80;
   };
 
   const getRocketCoordinates = (value = displayMultiplier) => {
     const progress = getProgress(value);
-    // Beri margin 8% supaya tidak menempel di sisi layar
-    const horizontal = 8 + progress * 84; // 8% -> 92%
-    // 90% = dekat bawah, 10% = dekat atas (sinkron dengan penggaris kanan)
-    const vertical = 90 - progress * 80; // 1x≈90%, 10x≈10%
+    const horizontal = 8 + progress * 84;
+    const vertical = 90 - progress * 80;
     return { left: horizontal, top: vertical };
   };
 
@@ -359,9 +447,9 @@ export default function CrashPage() {
   };
 
   const getRocketRotation = () => {
-    const progress = getProgress();
-    const baseRotation = -18;
-    const maxRotation = -60;
+    const progress = getProgress(displayMultiplier);
+    const baseRotation = -15;
+    const maxRotation = -45;
     return baseRotation + (maxRotation - baseRotation) * progress;
   };
 
@@ -381,7 +469,7 @@ export default function CrashPage() {
           <h3 className="text-lg font-semibold mb-4">Bet Amount</h3>
           <div className="space-y-3">
             <div className="flex items-center gap-2">
-              <span className="text-lime-400">$</span>
+              <span className="text-purple-400">$</span>
               <input
                 type="number"
                 value={bet}
@@ -429,7 +517,7 @@ export default function CrashPage() {
           <button
             onClick={handleJoinRound}
             disabled={state === 'RUNNING' || joined}
-            className="w-full bg-lime-400 hover:bg-lime-500 disabled:bg-zinc-600 disabled:cursor-not-allowed text-black font-semibold rounded-xl py-3 transition-colors"
+            className="w-full bg-purple-500 hover:bg-purple-400 disabled:bg-zinc-600 disabled:cursor-not-allowed text-black font-semibold rounded-xl py-3 transition-colors"
           >
             {state === 'RUNNING' ? 'Round In Progress' : joined ? 'Joined - Waiting...' : 'Start / Join Round'}
           </button>
@@ -441,6 +529,58 @@ export default function CrashPage() {
           >
             {cashed ? 'Cashed Out' : cashoutPending ? 'Cashing out…' : 'Cashout'}
           </button>
+        </div>
+
+        <div className="rounded-2xl bg-zinc-900/70 border border-zinc-800 p-4">
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-lg font-semibold text-white">Players</h3>
+            <span className="text-sm font-semibold text-purple-300">{roundPlayers.length || players}</span>
+          </div>
+          <div className="space-y-2 max-h-60 overflow-auto pr-1">
+            {roundPlayers.length === 0 ? (
+              <div className="text-sm text-zinc-500">Waiting for players…</div>
+            ) : (
+              roundPlayers.map((player) => {
+                const initials = typeof player.username === 'string' && player.username.trim().length > 0
+                  ? player.username.trim().slice(0, 2).toUpperCase()
+                  : 'PL';
+                const betText = player.bet !== null ? player.bet.toFixed(player.bet < 1 ? 4 : 2) : '—';
+                const cashoutText = player.cashoutMultiplier !== null ? `${player.cashoutMultiplier.toFixed(2)}×` : '—';
+                const payoutText = player.payout !== null ? player.payout.toFixed(2) : null;
+                const statusColor = player.status === 'CASHED'
+                  ? 'text-purple-300'
+                  : player.status === 'BUSTED'
+                    ? 'text-rose-400'
+                    : 'text-zinc-400';
+
+                return (
+                  <div
+                    key={`${player.id}-${player.username}`}
+                    className="flex items-center justify-between rounded-xl bg-zinc-800/60 border border-zinc-700/60 px-3 py-2"
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className="w-9 h-9 rounded-full bg-purple-500/15 border border-purple-500/40 flex items-center justify-center text-xs font-semibold text-purple-200">
+                        {initials}
+                      </div>
+                      <div>
+                        <div className="text-sm font-medium text-white leading-tight">{player.username}</div>
+                        <div className="text-xs text-zinc-400">Bet {betText}</div>
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <div className={`text-xs font-semibold ${statusColor}`}>{player.status.replace('_', '-')}</div>
+                      {cashoutText !== '—' && (
+                        <div className="text-xs text-purple-300">Cashout {cashoutText}</div>
+                      )}
+                      {payoutText && (
+                        <div className="text-xs text-zinc-400">Payout {payoutText}</div>
+                      )}
+                    </div>
+                  </div>
+                );
+              })
+            )}
+          </div>
         </div>
         </div>
 
@@ -542,6 +682,13 @@ export default function CrashPage() {
         <div className="absolute right-6 top-20 bottom-20 text-zinc-500 text-xs pointer-events-none">
           <div className="relative w-16 h-full">
             <div className="absolute inset-y-0 right-6 border-r border-zinc-700/60" />
+            <div
+              className="absolute right-[5px] bottom-0 w-[6px] rounded-t-full bg-gradient-to-t from-purple-500/70 via-purple-400/40 to-transparent"
+              style={{
+                height: `${Math.max(0, Math.min(100, 100 - getVerticalPercent(displayMultiplier)))}%`,
+                transition: 'height 0.15s linear'
+              }}
+            />
             {rulerMarks.map((mark) => {
               const topPercent = getVerticalPercent(mark);
               return (
@@ -554,22 +701,23 @@ export default function CrashPage() {
                     transform: 'translateY(-50%)'
                   }}
                 >
-                  <div className="w-3 h-px bg-zinc-600" />
-                  <span>{mark.toFixed(Number.isInteger(mark) ? 0 : 1)}×</span>
+                  <div className="w-3 h-px bg-zinc-500" />
+                  <span>{formatMultiplier(mark)}×</span>
                 </div>
               );
             })}
 
             <div
-              className="absolute right-[-12px] flex items-center gap-2 text-lime-400 font-semibold"
+              className="absolute right-[-12px] flex items-center gap-2 text-purple-400 font-semibold"
               style={{
                 top: `${getVerticalPercent(displayMultiplier)}%`,
-                transform: 'translateY(-50%)'
+                transform: 'translateY(-50%)',
+                transition: 'top 0.15s linear'
               }}
             >
-              <div className="w-4 h-[2px] bg-lime-400 shadow-[0_0_6px_rgba(132,204,22,0.8)]" />
-              <span className="text-sm bg-zinc-900/90 px-1.5 py-0.5 rounded-md border border-lime-400/40">
-                {displayMultiplier.toFixed(2)}×
+              <div className="w-4 h-[2px] bg-purple-400 shadow-[0_0_6px_rgba(168,85,247,0.8)]" />
+              <span className="text-sm bg-zinc-900/90 px-1.5 py-0.5 rounded-md border border-purple-400/40">
+                {formatMultiplier(displayMultiplier)}×
               </span>
             </div>
           </div>
@@ -582,7 +730,7 @@ export default function CrashPage() {
           <div className="space-y-3 text-sm">
             <div className="flex justify-between">
               <span className="text-zinc-400">Balance:</span>
-              <span className="text-lime-400 text-xl font-bold">{balance.toFixed(2)} SOL</span>
+              <span className="text-purple-400 text-xl font-bold">{balance.toFixed(2)} SOL</span>
             </div>
             <div className="flex justify-between">
               <span className="text-zinc-400">Last Crash:</span>
@@ -596,7 +744,7 @@ export default function CrashPage() {
             </div>
             <div className="flex justify-between">
               <span className="text-zinc-400">House Profit:</span>
-              <span className="text-lime-400 font-mono">{houseProfit.toFixed(2)} SOL</span>
+              <span className="text-purple-400 font-mono">{houseProfit.toFixed(2)} SOL</span>
             </div>
           </div>
         </div>
