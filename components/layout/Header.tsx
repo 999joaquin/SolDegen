@@ -6,6 +6,8 @@ import { Button } from "@/components/ui/button";
 import { Wallet, Menu, LogOut, User, Settings, Trophy } from "lucide-react";
 import WalletConnectDialog from "../wallet/WalletConnectDialog";
 import { useWallet } from "@/hooks/use-wallet";
+import { useSolanaAirdrop } from "@/hooks/use-solana-airdrop";
+import { useSolanaBalance } from "@/hooks/use-solana-balance";
 import { shortenAddress } from "@/utils/format";
 import BalanceBadge from "../wallet/BalanceBadge";
 import {
@@ -17,10 +19,26 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { showError, showSuccess } from "@/utils/toast";
 
 const Header = () => {
   const { connected, address, disconnect, username } = useWallet();
   const [open, setOpen] = React.useState(false);
+  const { airdrop } = useSolanaAirdrop();
+  const { refresh } = useSolanaBalance(address || null);
+  const isDevnet = (process.env.NEXT_PUBLIC_SOLANA_NETWORK as string) === "devnet";
+
+  const handleDevnetAirdrop = React.useCallback(() => {
+    if (!address) return;
+    airdrop(address, 1)
+      .then(() => {
+        showSuccess("Airdrop requested! Balance will update shortly.");
+        refresh();
+      })
+      .catch((err) => {
+        showError(err?.message ?? "Airdrop failed. Please try again.");
+      });
+  }, [address, airdrop, refresh]);
 
   return (
     <header className="border-b border-purple-700/50 bg-purple-900/20 backdrop-blur-xl shadow-lg shadow-purple-900/30">
@@ -31,11 +49,19 @@ const Header = () => {
           </Link>
 
           <nav className="hidden md:flex items-center space-x-6">
-            <Link href="/crash" className="text-purple-300 hover:text-purple-100 transition-colors">
-              Crash
+            <Link href="/crash" aria-label="Crash" className="group">
+              <img
+                src="/crash-logo.png"
+                alt="Crash"
+                className="h-12 md:h-14 w-auto opacity-80 transition-all duration-200 group-hover:opacity-100 group-hover:scale-105"
+              />
             </Link>
-            <Link href="/plinko" className="text-purple-300 hover:text-purple-100 transition-colors">
-              Plinko
+            <Link href="/plinko" aria-label="Plinko" className="group">
+              <img
+                src="/plinko-logo.png"
+                alt="Plinko"
+                className="h-12 md:h-14 w-auto opacity-80 transition-all duration-200 group-hover:opacity-100 group-hover:scale-105"
+              />
             </Link>
             <Link href="#" className="text-purple-300 hover:text-purple-100 transition-colors">
               Leaderboard
@@ -94,6 +120,15 @@ const Header = () => {
                       Leaderboard
                     </Link>
                   </DropdownMenuItem>
+                  {isDevnet && (
+                    <DropdownMenuItem
+                      onClick={handleDevnetAirdrop}
+                      className="text-green-400 focus:bg-green-900/30 focus:text-green-300"
+                    >
+                      <Wallet className="w-4 h-4 mr-2" />
+                      Get 1 SOL (devnet)
+                    </DropdownMenuItem>
+                  )}
                   <DropdownMenuSeparator className="bg-purple-700/40" />
                   <DropdownMenuItem
                     onClick={disconnect}
