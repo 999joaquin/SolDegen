@@ -23,8 +23,7 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { useWallet } from "../../hooks/use-wallet";
-import { showError } from "../../utils/toast";
-import { loadProfile } from "../../utils/storage";
+import { showError, showSuccess } from "../../utils/toast";
 
 const schema = z.object({
   username: z.string().min(2, "Username must be at least 2 characters").max(30, "Username is too long"),
@@ -39,7 +38,14 @@ type WalletConnectDialogProps = {
 };
 
 const WalletConnectDialog: React.FC<WalletConnectDialogProps> = ({ open, onOpenChange }) => {
-  const { connectWithPhantom, isPhantomInstalled } = useWallet();
+  const { startConnect, completeRegistration, disconnect, isPhantomInstalled } = useWallet();
+  const [step, setStep] = React.useState<"connect" | "register">("connect");
+
+  React.useEffect(() => {
+    if (open) {
+      setStep("connect");
+    }
+  }, [open]);
 
   const form = useForm<FormValues>({
     resolver: zodResolver(schema),
@@ -47,54 +53,48 @@ const WalletConnectDialog: React.FC<WalletConnectDialogProps> = ({ open, onOpenC
     mode: "onSubmit",
   });
 
-  React.useEffect(() => {
-    if (!open) return;
-    const provider = (window as any).solana;
-    if (!provider?.isPhantom) return;
-    let cancelled = false;
-
-    const tryAutoConnect = async () => {
-      try {
-        const resp = await provider.connect({ onlyIfTrusted: true });
-        const addr = resp?.publicKey?.toString();
-        if (!addr) {
-          form.reset({ username: "", email: "" });
-          return;
-        }
-        const cached = loadProfile(addr);
-        if (cached && !cancelled) {
-          await connectWithPhantom(cached);
-          onOpenChange(false);
-          return;
-        }
-        form.reset({ username: "", email: "" });
-      } catch {
-        form.reset({ username: "", email: "" });
+  async function handleConnect() {
+    try {
+      const { profileFound } = await startConnect();
+      if (profileFound) {
+        showSuccess("Connected to your existing account.");
+        onOpenChange(false);
+      } else {
+        setStep("register");
       }
-    };
-
-    void tryAutoConnect();
-    return () => { cancelled = true; };
-  }, [open, connectWithPhantom, onOpenChange, form]);
+    } catch (err) {
+      console.error(err);
+      showError("Unable to connect wallet. Please try again.");
+    }
+  }
 
   async function onSubmit(values: FormValues) {
-    await connectWithPhantom({
-      username: values.username,
-      email: values.email
-    })
+    await completeRegistration(values.username, values.email)
       .then(() => onOpenChange(false))
       .catch((err) => {
         console.error(err);
-        showError("Unable to connect wallet. Please try again.");
+        showError("Failed to create profile. Please try again.");
       });
+  }
+
+  function handleCancel() {
+    if (step === "register") {
+      // If user cancels during registration, disconnect to avoid half-connected state
+      void disconnect();
+    }
+    onOpenChange(false);
   }
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Connect your wallet</DialogTitle>
-          <DialogDescription>Enter your details, then we'll connect to your Phantom wallet.</DialogDescription>
+          <DialogTitle>{step === "connect" ? "Connect your wallet" : "Create your profile"}</DialogTitle>
+          <DialogDescription>
+            {step === "connect"
+              ? "We will open Phantom to verify your identity. If your wallet has a profile, you'll be connected automatically."
+              : "We couldn't find a profile for this wallet. Please set a public username and backup email."}
+          </DialogDescription>
         </DialogHeader>
 
         {!isPhantomInstalled && (
@@ -107,46 +107,57 @@ const WalletConnectDialog: React.FC<WalletConnectDialogProps> = ({ open, onOpenC
           </div>
         )}
 
-        <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-            <FormField
-              control={form.control}
-              name="username"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Username</FormLabel>
-                  <FormControl>
-                    <Input placeholder="degen_sam" {...field} />
-                  </FormControl>
-                  <FormDescription>Your public display name.</FormDescription>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
-              name="email"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Email (backup)</FormLabel>
-                  <FormControl>
-                    <Input type="email" placeholder="you@example.com" {...field} />
-                  </FormControl>
-                  <FormDescription>Only used for emergency account recovery.</FormDescription>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <div className="flex items-center justify-end gap-2 pt-2">
-              <Button type="button" variant="ghost" onClick={() => onOpenChange(false)} disabled={form.formState.isSubmitting}>
-                Cancel
-              </Button>
-              <Button type="submit" disabled={form.formState.isSubmitting || !isPhantomInstalled}>
-                {form.formState.isSubmitting ? "Connecting..." : "Continue & Connect"}
-              </Button>
-            </div>
-          </form>
-        </Form>
+        {step === "connect" ? (
+          <div className="flex items-center justify-end gap-2 pt-2">
+            <Button type="button" variant="ghost" onClick={handleCancel}>
+              Cancel
+            </Button>
+            <Button type="button" onClick={handleConnect} disabled={!isPhantomInstalled}>
+              Connect with Phantom
+            </Button>
+          </div>
+        ) : (
+          <Form {...form}>
+            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+              <FormField
+                control={form.control}
+                name="username"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Username</FormLabel>
+                    <FormControl>
+                      <Input placeholder="degen_sam" {...field} />
+                    </FormControl>
+                    <FormDescription>Your public display name.</FormDescription>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="email"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Email (backup)</FormLabel>
+                    <FormControl>
+                      <Input type="email" placeholder="you@example.com" {...field} />
+                    </FormControl>
+                    <FormDescription>Only used for emergency account recovery.</FormDescription>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <div className="flex items-center justify-end gap-2 pt-2">
+                <Button type="button" variant="ghost" onClick={handleCancel} disabled={form.formState.isSubmitting}>
+                  Cancel
+                </Button>
+                <Button type="submit" disabled={form.formState.isSubmitting || !isPhantomInstalled}>
+                  {form.formState.isSubmitting ? "Saving..." : "Save & Connect"}
+                </Button>
+              </div>
+            </form>
+          </Form>
+        )}
       </DialogContent>
     </Dialog>
   );
