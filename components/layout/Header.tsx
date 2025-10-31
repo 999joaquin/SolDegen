@@ -141,9 +141,24 @@ const Header = () => {
               </DropdownMenu>
             </>
           )}
-          <Button variant="ghost" size="icon" className="md:hidden">
-            <Menu className="w-5 h-5" />
-          </Button>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" size="icon" className="md:hidden" aria-label="Open menu">
+                <Menu className="w-5 h-5" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-44 bg-black/90 border-purple-700/40">
+              <DropdownMenuItem asChild className="text-purple-300 focus:bg-purple-700/40 focus:text-purple-100">
+                <Link href="/crash">Crash</Link>
+              </DropdownMenuItem>
+              <DropdownMenuItem asChild className="text-purple-300 focus:bg-purple-700/40 focus:text-purple-100">
+                <Link href="/plinko">Plinko</Link>
+              </DropdownMenuItem>
+              <DropdownMenuItem asChild className="text-purple-300 focus:bg-purple-700/40 focus:text-purple-100">
+                <Link href="#">Leaderboard</Link>
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
       </div>
 
