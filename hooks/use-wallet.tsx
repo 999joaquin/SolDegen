@@ -3,9 +3,9 @@
 import React from "react";
 import { showError, showSuccess } from "../utils/toast";
 import { getProfile, upsertProfile } from "../lib/supabase-queries";
-import { loadProfile, saveProfile } from "../utils/storage";
+import { loadProfile, saveProfile, clearProfile, isAutoConnectDisabled, setAutoConnectDisabled } from "../utils/storage";
 
-type ConnectInput = { username: string; email: string; };
+type ConnectInput = { username: string; email: string; }; // DEPRECATED: kept for context; not used
 
 interface PhantomPublicKey { toString(): string; }
 interface PhantomProvider {
@@ -24,7 +24,9 @@ type WalletContextValue = {
   address: string | null;
   username: string | null;
   email: string | null;
-  connectWithPhantom: (input: ConnectInput) => Promise<void>;
+  // NEW: two-step connect API
+  startConnect: () => Promise<{ address: string; profileFound: boolean }>;
+  completeRegistration: (username: string, email: string) => Promise<void>;
   disconnect: () => Promise<void>;
   isPhantomInstalled: boolean;
 };
@@ -43,6 +45,17 @@ export const WalletProvider: React.FC<React.PropsWithChildren> = ({ children }) 
   React.useEffect(() => {
     if (typeof window !== "undefined" && window.solana?.isPhantom) {
       providerRef.current = window.solana;
+
+      if (isAutoConnectDisabled()) {
+        if (providerRef.current?.isConnected) {
+          void providerRef.current.disconnect();
+        }
+        setConnected(false);
+        setAddress(null);
+        setUsername(null);
+        setEmail(null);
+      }
+
       providerRef.current?.on?.("disconnect", () => {
         setConnected(false);
         setAddress(null);
@@ -53,95 +66,150 @@ export const WalletProvider: React.FC<React.PropsWithChildren> = ({ children }) 
       providerRef.current?.on?.("accountChanged", (publicKey?: PhantomPublicKey | null) => {
         const addr = publicKey ? publicKey.toString() : providerRef.current?.publicKey?.toString() || null;
         setAddress(addr);
-        setConnected(!!addr);
+
         if (addr) {
           const cached = loadProfile(addr);
-          if (cached) {
-            setUsername(cached.username);
-            setEmail(cached.email);
-          }
           void getProfile(addr)
             .then((p) => {
-              setUsername((p as any)?.username ?? null);
-              setEmail((p as any)?.email ?? null);
+              const profile = p as any;
+              if (profile) {
+                setConnected(true);
+                setUsername(profile.username ?? null);
+                setEmail(profile.email ?? null);
+                if (!cached && profile?.username && profile?.email) {
+                  saveProfile(addr, { username: profile.username, email: profile.email });
+                }
+              } else {
+                setConnected(false);
+                setUsername(null);
+                setEmail(null);
+                clearProfile(addr);
+              }
             })
-            .catch(() => {});
+            .catch(() => {
+              setConnected(false);
+              setUsername(null);
+              setEmail(null);
+              clearProfile(addr);
+            });
         } else {
+          setConnected(false);
           setUsername(null);
           setEmail(null);
         }
       });
 
-      void providerRef.current
-        .connect({ onlyIfTrusted: true })
-        .then(({ publicKey }) => {
-          const addr = publicKey?.toString();
-          if (!addr) return;
-          setConnected(true);
-          setAddress(addr);
-          const cached = loadProfile(addr);
-          if (cached) {
-            setUsername(cached.username);
-            setEmail(cached.email);
-          }
-          void getProfile(addr)
+      // NEW: On refresh, if auto-connect is not disabled and Phantom exposes a session,
+      // verify profile and restore connected state without requiring a click.
+      if (!isAutoConnectDisabled()) {
+        const initialAddr = providerRef.current.publicKey?.toString() || null;
+        setAddress(initialAddr || null);
+
+        if (initialAddr) {
+          const cached = loadProfile(initialAddr);
+          void getProfile(initialAddr)
             .then((p) => {
-              setUsername((p as any)?.username ?? null);
-              setEmail((p as any)?.email ?? null);
+              const profile = p as any;
+              if (profile) {
+                setConnected(true);
+                setUsername(profile.username ?? null);
+                setEmail(profile.email ?? null);
+                if (!cached && profile?.username && profile?.email) {
+                  saveProfile(initialAddr, { username: profile.username, email: profile.email });
+                }
+              } else {
+                setConnected(false);
+                setUsername(null);
+                setEmail(null);
+                clearProfile(initialAddr);
+              }
             })
-            .catch(() => {});
-        })
-        .catch(() => {});
+            .catch(() => {
+              setConnected(false);
+              setUsername(null);
+              setEmail(null);
+              clearProfile(initialAddr);
+            });
+        }
+      }
     }
   }, []);
 
-  const connectWithPhantom = React.useCallback(async (input: ConnectInput) => {
+  // NEW: Always open Phantom connect window; then decide profile flow
+  const startConnect = React.useCallback(async (): Promise<{ address: string; profileFound: boolean }> => {
     if (!window.solana || !window.solana.isPhantom) {
       showError("Phantom Wallet not found. Please install Phantom to continue.");
       throw new Error("Phantom not installed");
     }
-    const provider = window.solana;
 
-    let addr: string | null = null;
-    if (provider.isConnected && provider.publicKey) {
-      addr = provider.publicKey.toString();
-    } else {
-      const resp = await provider.connect();
-      addr = resp.publicKey?.toString() ?? null;
-    }
+    const provider = window.solana;
+    const resp = await provider.connect(); // always prompt Phantom
+    const addr = resp.publicKey?.toString() ?? null;
     if (!addr) {
       showError("Failed to retrieve wallet address.");
       throw new Error("No publicKey returned");
     }
 
     providerRef.current = provider;
-    setConnected(true);
     setAddress(addr);
-    setUsername(input.username);
-    setEmail(input.email);
 
-    saveProfile(addr, { username: input.username, email: input.email });
+    const profile = await getProfile(addr).catch((e) => {
+      console.error("Failed to fetch profile:", e);
+      return null;
+    });
 
-    try {
-      await upsertProfile(addr, input.username, input.email);
-    } catch (error) {
-      console.error("Failed to save profile details to Supabase:", error);
-      showError("Failed to save profile details. Please try again.");
+    if (profile) {
+      setConnected(true);
+      setUsername((profile as any).username ?? null);
+      setEmail((profile as any).email ?? null);
+      saveProfile(addr, { username: (profile as any).username, email: (profile as any).email });
+      setAutoConnectDisabled(false);
+      showSuccess("Wallet connected.");
+      return { address: addr, profileFound: true };
+    } else {
+      // stay not connected until registration completes
+      setConnected(false);
+      setUsername(null);
+      setEmail(null);
+      clearProfile(addr);
+      setAutoConnectDisabled(false);
+      return { address: addr, profileFound: false };
     }
-    showSuccess("Wallet connected successfully.");
   }, []);
+
+  // NEW: Complete registration when no profile exists
+  const completeRegistration = React.useCallback(async (usernameInput: string, emailInput: string) => {
+    const addr = providerRef.current?.publicKey?.toString() || address;
+    if (!addr) {
+      showError("No wallet address found. Please connect your wallet again.");
+      throw new Error("Missing address for registration");
+    }
+    const data = await upsertProfile(addr, usernameInput, emailInput);
+    setConnected(true);
+    setUsername(data.username ?? usernameInput);
+    setEmail(data.email ?? emailInput);
+    saveProfile(addr, { username: data.username ?? usernameInput, email: data.email ?? emailInput });
+    setAutoConnectDisabled(false);
+    showSuccess("Profile created and connected.");
+  }, [address]);
 
   const disconnect = React.useCallback(async () => {
     const provider = providerRef.current;
+    const currentAddress = provider?.publicKey?.toString() || address || null;
+
     if (provider && provider.disconnect) {
       await provider.disconnect();
     }
+    if (currentAddress) {
+      clearProfile(currentAddress);
+    }
+    setAutoConnectDisabled(true);
     setConnected(false);
     setAddress(null);
     setUsername(null);
     setEmail(null);
     showSuccess("Wallet disconnected.");
-  }, []);
+  }, [address]);
 
   const value = React.useMemo(
     () => ({
@@ -149,11 +217,12 @@ export const WalletProvider: React.FC<React.PropsWithChildren> = ({ children }) 
       address,
       username,
       email,
-      connectWithPhantom,
+      startConnect,
+      completeRegistration,
       disconnect,
       isPhantomInstalled,
     }),
-    [connected, address, username, email, connectWithPhantom, disconnect, isPhantomInstalled],
+    [connected, address, username, email, startConnect, completeRegistration, disconnect, isPhantomInstalled],
   );
 
   return <WalletContext.Provider value={value}>{children}</WalletContext.Provider>;
