@@ -1,6 +1,0 @@
-{
-  "/plinko/page": "app/plinko/page.js",
-  "/api/fair/current/route": "app/api/fair/current/route.js",
-  "/api/demo/balance/route": "app/api/demo/balance/route.js",
-  "/api/demo/stats/route": "app/api/demo/stats/route.js"
-}
