@@ -1,5 +1,6 @@
 "use client";
 
+import { useState, useEffect } from 'react';
 import { FIXED_ROWS, FIXED_RISK } from '@/lib/constants';
 
 interface ControlsProps {
@@ -21,15 +22,54 @@ export default function Controls({
   disabled,
   buttonText,
 }: ControlsProps) {
+  const [betInput, setBetInput] = useState(bet.toString());
+
+  useEffect(() => {
+    setBetInput(bet.toString());
+  }, [bet]);
+
   const handleBetChange = (value: string) => {
-    const numValue = parseFloat(value);
-    if (!isNaN(numValue) && numValue >= 0) {
-      setBet(numValue);
+    setBetInput(value);
+    if (value === '' || value === '-' || value === '.') {
+      // Allow empty or just decimal point
+    } else {
+      const numValue = parseFloat(value);
+      if (!isNaN(numValue) && numValue >= 0) {
+        setBet(numValue);
+      }
     }
   };
 
-  const halveBet = () => setBet(Math.max(0.1, bet / 2));
-  const doubleBet = () => setBet(Math.min(100, bet * 2));
+  const handleBlur = () => {
+    // On blur, ensure we have a valid number
+    if (betInput === '' || betInput === '-' || betInput === '.' || isNaN(parseFloat(betInput))) {
+      setBetInput('0.1');
+      setBet(0.1);
+    } else {
+      const numValue = parseFloat(betInput);
+      if (numValue < 0.1) {
+        setBetInput('0.1');
+        setBet(0.1);
+      } else if (numValue > 100) {
+        setBetInput('100');
+        setBet(100);
+      } else {
+        setBet(numValue);
+      }
+    }
+  };
+
+  const halveBet = () => {
+    const newBet = Math.max(0.1, bet / 2);
+    setBet(newBet);
+    setBetInput(newBet.toString());
+  };
+  
+  const doubleBet = () => {
+    const newBet = Math.min(100, bet * 2);
+    setBet(newBet);
+    setBetInput(newBet.toString());
+  };
 
   const randomizeSeed = () => {
     const randomSeed = Array.from({ length: 16 }, () =>
@@ -46,8 +86,9 @@ export default function Controls({
         <div className="relative">
           <input
             type="number"
-            value={bet}
+            value={betInput}
             onChange={(e) => handleBetChange(e.target.value)}
+            onBlur={handleBlur}
             className="w-full bg-gray-800 text-white px-4 py-3 pr-16 rounded-xl border border-gray-700 focus:border-lime-400 focus:outline-none"
             step="0.1"
             min="0.1"

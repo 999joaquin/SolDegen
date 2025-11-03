@@ -21,7 +21,7 @@ export default function CrashChat({ userId, username = `Player${userId}` }: Cras
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [inputMessage, setInputMessage] = useState('');
   const [isConnected, setIsConnected] = useState(false);
-  const messagesEndRef = useRef<HTMLDivElement>(null);
+  const messagesContainerRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
   const userColors: { [key: number]: string } = useRef({}).current;
@@ -35,7 +35,9 @@ export default function CrashChat({ userId, username = `Player${userId}` }: Cras
   };
 
   const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    const container = messagesContainerRef.current;
+    if (!container) return;
+    container.scrollTo({ top: container.scrollHeight, behavior: 'smooth' });
   };
 
   useEffect(() => { scrollToBottom(); }, [messages]);
@@ -103,7 +105,7 @@ export default function CrashChat({ userId, username = `Player${userId}` }: Cras
         </span>
       </div>
 
-      <div className="flex-1 overflow-y-auto p-4 space-y-2 scroll-smooth">
+      <div ref={messagesContainerRef} className="flex-1 overflow-y-auto p-4 space-y-2 scroll-smooth">
         {messages.length === 0 ? (
           <div className="flex items-center justify-center h-full">
             <p className="text-zinc-500 text-sm">No messages yet. Be the first to chat!</p>
@@ -125,7 +127,6 @@ export default function CrashChat({ userId, username = `Player${userId}` }: Cras
             );
           })
         )}
-        <div ref={messagesEndRef} />
       </div>
 
       <form onSubmit={handleSendMessage} className="border-t border-zinc-700 p-3">

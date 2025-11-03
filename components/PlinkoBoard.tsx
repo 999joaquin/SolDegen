@@ -18,7 +18,7 @@ type PreviewBall = {
 interface PlinkoBoardProps {
   path: number[];
   isAnimating: boolean;
-  onAnimationComplete: () => void;
+  onAnimationComplete: (physicsMultiplier?: number) => void;
   finalBin?: number;
   roundStatus: string;
   previewBalls?: PreviewBall[];
@@ -39,6 +39,7 @@ export default function PlinkoBoard({
   const [usingPhysics, setUsingPhysics] = useState(false);
   const [animationComplete, setAnimationComplete] = useState(false);
   const [showResult, setShowResult] = useState(false);
+  const [physicsMultiplier, setPhysicsMultiplier] = useState<number | null>(null);
   const ballIdRef = useRef<string>('');
   const physicsSocket = useRef<ReturnType<typeof getPhysicsSocket> | null>(null);
   const isInitializedRef = useRef(false);
@@ -59,15 +60,17 @@ export default function PlinkoBoard({
     }
   }
 
+  // Multipliers - Updated by user
+  const multipliers = [10.0, 8.0, 5.0, 3.0, 1.0, 0.9, 0.6, 0.4, 0.3, 0.2, 0.3, 0.4, 0.6, 0.9, 1.0, 3.0, 5.0, 8.0, 10.0];
+  const numBins = multipliers.length; // 19 bins
+
   const bins: Array<{ x: number; y: number; index: number }> = [];
   const binY = 80 + rows * dy + 30; // Posisi Y bins
-  for (let i = 0; i <= rows; i++) {
-    const x = boardWidth / 2 + (i - rows / 2) * dx;
+  // Generate bins based on actual multipliers count (19 bins)
+  for (let i = 0; i < numBins; i++) {
+    const x = boardWidth / 2 + (i - (numBins - 1) / 2) * dx;
     bins.push({ x, y: binY, index: i });
   }
-
-  // Multipliers disesuaikan dengan server - Win ratio 40:60 (Player 40%, House 60%)
-  const multipliers = [0.2, 0.35, 0.55, 0.9, 1.1, 0.95, 1.25, 1.55, 2.0, 1.55, 1.25, 0.95, 1.1, 0.9, 0.55, 0.35, 0.2];
 
   const formatMultiplier = (value: number) => `${value.toFixed(2).replace(/\.0+$/, '').replace(/(\.\d+?)0+$/, '$1')}x`;
 
@@ -78,7 +81,7 @@ export default function PlinkoBoard({
     }
     setAnimatedPreviewBalls(previewBalls);
 
-    const totalBins = rows + 1;
+    const totalBins = numBins; // Use actual number of bins (19)
 
     const interval = setInterval(() => {
       setAnimatedPreviewBalls(prev =>
@@ -163,21 +166,28 @@ export default function PlinkoBoard({
     const handlePhysicsComplete = (data: PhysicsComplete) => {
       console.log(`📥 Received physics_complete:`, data, `Expected ballId:`, ballIdRef.current);
       if (data.ballId === ballIdRef.current) {
-        console.log(`🎯 Physics complete! Ball landed at (${data.finalX}, ${data.finalY})`);
+        console.log(`🎯 Physics complete! Ball landed at (${data.finalX}, ${data.finalY}) with multiplier ${data.multiplier}x`);
         setBallPosition({ x: data.finalX, y: data.finalY });
         setAnimationComplete(true);
+        setPhysicsMultiplier(data.multiplier);
         
         // Wait for ball to settle, then show result
         setTimeout(() => {
           setShowResult(true);
           
-          // Hide ball and complete after showing result
+          // Wait longer to show result, THEN notify parent to update Last Result
           setTimeout(() => {
-            setShowBall(false);
-            setUsingPhysics(false);
-            isInitializedRef.current = false;
-            onAnimationComplete();
-          }, 1000);
+            console.log(`✅ Ball landed in bin, calling onAnimationComplete with multiplier ${data.multiplier}x`);
+            onAnimationComplete(data.multiplier);
+            
+            // Hide ball after notifying parent
+            setTimeout(() => {
+              setShowBall(false);
+              setUsingPhysics(false);
+              setPhysicsMultiplier(null);
+              isInitializedRef.current = false;
+            }, 500);
+          }, 1500); // Show result for 1.5 seconds before updating
         }, 300);
       }
     };
@@ -290,9 +300,9 @@ export default function PlinkoBoard({
     <div className="flex-1 flex flex-col items-center justify-start bg-gradient-to-br from-purple-900 via-blue-900 to-pink-900 rounded-2xl p-6 lg:p-8 relative">
       <div className="mb-4 text-center">
         <div className="text-white text-lg font-semibold">{roundStatus}</div>
-        {showResult && finalBin !== undefined && (
-          <div className={`mt-2 text-2xl font-bold ${multipliers[finalBin] >= 1.0 ? 'text-green-400' : 'text-red-400'} animate-pulse`}>
-            {multipliers[finalBin] >= 1.0 ? '🎉 WIN!' : '💔 LOSS'} - Bin {finalBin} ({formatMultiplier(multipliers[finalBin])})
+        {showResult && physicsMultiplier !== null && (
+          <div className={`mt-2 text-2xl font-bold ${physicsMultiplier >= 1.0 ? 'text-green-400' : 'text-red-400'} animate-pulse`}>
+            {physicsMultiplier >= 1.0 ? '🎉 WIN!' : '💔 LOSS'} - {formatMultiplier(physicsMultiplier)}
           </div>
         )}
       </div>
