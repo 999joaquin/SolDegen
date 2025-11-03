@@ -20,15 +20,42 @@ async function sendThanksEmail(toEmail: string) {
 You're officially on the SolDegen waitlist. We'll keep you posted with updates and early access to Crash and Plinko.
 
 If you didn't request this, you can ignore this email.`
+
+  // Branded HTML email (inline styles for compatibility)
   const html = `
-    <div style="font-family: Arial, sans-serif; line-height:1.6; color:#111">
-      <h2 style="margin:0 0 12px">Thanks for signing up!</h2>
-      <p>You're officially on the SolDegen waitlist. We'll keep you posted with updates and early access to Crash and Plinko.</p>
-      <p>In the meantime, stay tuned—degen times ahead.</p>
-      <hr style="border:none;border-top:1px solid #eee;margin:16px 0" />
-      <p style="font-size:12px;color:#666;margin:0">If you didn't request this, you can ignore this email.</p>
-    </div>
+    <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="background:#0b1020; padding: 24px 0;">
+      <tr>
+        <td align="center">
+          <table role="presentation" width="600" cellspacing="0" cellpadding="0" border="0" style="margin:0 auto;">
+            <tr>
+              <td style="background:#7c3aed; padding:24px 32px; color:#ffffff; font-family: Arial, sans-serif; font-size:22px; font-weight:700; text-align:center; border-top-left-radius:12px; border-top-right-radius:12px;">
+                SolDegen
+              </td>
+            </tr>
+            <tr>
+              <td style="background:#ffffff; padding:32px; border-bottom-left-radius:12px; border-bottom-right-radius:12px; font-family: Arial, sans-serif; color:#0f172a;">
+                <h2 style="margin:0 0 12px; font-size:20px; line-height:1.3; color:#0f172a;">You're on the waitlist 🎉</h2>
+                <p style="margin:0 0 12px; font-size:16px; color:#334155;">
+                  Thanks for signing up! You're officially on the SolDegen waitlist. We'll keep you posted with updates and early access to Crash and Plinko.
+                </p>
+                <p style="margin:0 0 12px; font-size:16px; color:#334155;">
+                  In the meantime, stay tuned—degen times ahead.
+                </p>
+                <hr style="border:none; border-top:1px solid #e2e8f0; margin:16px 0" />
+                <p style="margin:0; font-size:12px; color:#64748b;">
+                  If you didn't request this, you can ignore this email.
+                </p>
+              </td>
+            </tr>
+            <tr>
+              <td style="height:32px"></td>
+            </tr>
+          </table>
+        </td>
+      </tr>
+    </table>
   `
+
   const payload = {
     from: `SolDegen <${fromEmail}>`,
     to: [toEmail],
