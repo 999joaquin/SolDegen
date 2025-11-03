@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { renderToStaticMarkup } from "react-dom/server";
+import { Resend } from "resend";
 import WaitlistThanks from "../../../../emails/WaitlistThanks";
 import React from "react";
 
@@ -33,28 +33,19 @@ export async function POST(req: Request) {
     }
 
     const subject = "You're on the SolDegen waitlist 🎉";
+    const resend = new Resend(apiKey);
     const emailElement = React.createElement(WaitlistThanks, {});
-    const html = renderToStaticMarkup(emailElement);
 
-    const resp = await fetch("https://api.resend.com/emails", {
-      method: "POST",
-      headers: {
-        "Authorization": `Bearer ${apiKey}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        from: `SolDegen <${fromEmail}>`,
-        to: email.trim(),
-        subject,
-        html,
-      }),
+    const { error } = await resend.emails.send({
+      from: `SolDegen <${fromEmail}>`,
+      to: email.trim(),
+      subject,
+      react: emailElement,
     });
 
-    if (!resp.ok) {
-      const errJson = await resp.json().catch(() => null);
-      const msg = errJson?.error?.message || errJson?.message || `Resend API error (${resp.status})`;
-      console.error("Resend REST error:", errJson || resp.statusText);
-      return NextResponse.json({ error: msg }, { status: 400 });
+    if (error) {
+      console.error("Resend email error:", error);
+      return NextResponse.json({ error: error.message || "Failed to send email" }, { status: 400 });
     }
 
     return NextResponse.json({ ok: true });
