@@ -25,19 +25,32 @@ export default function ComingSoonPage() {
 
   async function onSubmit(values: FormValues) {
     const { email } = values;
-    const res = await joinWaitlist(email)
-      .catch((err) => {
-        console.error(err);
-        showError("We couldn't save your email. Please try again.");
-        return null;
-      });
 
-    if (!res) return;
+    const res = await joinWaitlist(email).catch((err) => {
+      console.error(err);
+      showError("We couldn't save your email. Please try again.");
+      return null;
+    });
+    if (!res?.ok) return;
 
-    showSuccess(`Thanks! We'll notify you at ${email} when SolDrop launches.`);
-    if (res.emailWarning) {
-      showError(`Saved, but we couldn't send a confirmation email: ${res.emailWarning}`);
+    // Fire the email (server-side) using our React template via Resend
+    const emailResp = await fetch("/api/email/waitlist", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email }),
+    });
+
+    if (!emailResp.ok) {
+      const details = await emailResp.json().catch(() => ({}));
+      showError(
+        `You're on the waitlist, but we couldn't send a confirmation email${
+          details?.error ? `: ${details.error}` : "."
+        }`
+      );
+    } else {
+      showSuccess(`Thanks! We'll notify you at ${email} when SolDrop launches.`);
     }
+
     form.reset({ email: "" });
   }
 

@@ -62,10 +62,9 @@ export async function getLeaderboard(game: "plinko" | "crash", limit = 20) {
 }
 
 export async function joinWaitlist(email: string) {
-  const { data, error } = await supabase.functions.invoke(
-    "waitlist",
-    { body: { email } }
-  );
+  const { data, error } = await supabase.functions.invoke("waitlist", {
+    body: { email },
+  });
   if (error) throw error;
-  return data as { ok: boolean; emailWarning?: string };
+  return data as { ok: boolean };
 }
