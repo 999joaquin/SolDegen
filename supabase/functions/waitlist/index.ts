@@ -87,14 +87,11 @@ serve(async (req) => {
   }
 
   const emailResult = await sendThanksEmail(rawEmail)
-  if (!emailResult.ok) {
-    return new Response(JSON.stringify({ error: emailResult.error }), {
-      status: 500,
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
-    })
-  }
+  const responseBody = emailResult.ok
+    ? { ok: true }
+    : { ok: true, emailWarning: emailResult.error }
 
-  return new Response(JSON.stringify({ ok: true }), {
+  return new Response(JSON.stringify(responseBody), {
     status: 200,
     headers: { ...corsHeaders, "Content-Type": "application/json" },
   })
