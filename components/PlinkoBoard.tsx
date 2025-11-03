@@ -60,15 +60,17 @@ export default function PlinkoBoard({
     }
   }
 
+  // Multipliers - Updated by user
+  const multipliers = [10.0, 8.0, 5.0, 3.0, 1.0, 0.9, 0.6, 0.4, 0.3, 0.2, 0.3, 0.4, 0.6, 0.9, 1.0, 3.0, 5.0, 8.0, 10.0];
+  const numBins = multipliers.length; // 19 bins
+
   const bins: Array<{ x: number; y: number; index: number }> = [];
   const binY = 80 + rows * dy + 30; // Posisi Y bins
-  for (let i = 0; i <= rows; i++) {
-    const x = boardWidth / 2 + (i - rows / 2) * dx;
+  // Generate bins based on actual multipliers count (19 bins)
+  for (let i = 0; i < numBins; i++) {
+    const x = boardWidth / 2 + (i - (numBins - 1) / 2) * dx;
     bins.push({ x, y: binY, index: i });
   }
-
-  // Multipliers - Max 10x, Win 40% : Loss 60%
-  const multipliers = [10.0, 7.0, 4.0, 2.0, 0.9, 0.6, 0.4, 0.3, 0.2, 0.3, 0.4, 0.6, 0.9, 2.0, 4.0, 7.0, 10.0];
 
   const formatMultiplier = (value: number) => `${value.toFixed(2).replace(/\.0+$/, '').replace(/(\.\d+?)0+$/, '$1')}x`;
 
@@ -79,7 +81,7 @@ export default function PlinkoBoard({
     }
     setAnimatedPreviewBalls(previewBalls);
 
-    const totalBins = rows + 1;
+    const totalBins = numBins; // Use actual number of bins (19)
 
     const interval = setInterval(() => {
       setAnimatedPreviewBalls(prev =>

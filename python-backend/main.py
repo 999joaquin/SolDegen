@@ -48,8 +48,9 @@ START_Y = 80
 ROW_SPACING = 32
 COL_SPACING = 35
 
-# Multipliers for 16-row board - Max 10x, Win 40% : Loss 60%
-MULTIPLIERS = [10.0, 7.0, 4.0, 2.0, 0.9, 0.6, 0.4, 0.3, 0.2, 0.3, 0.4, 0.6, 0.9, 2.0, 4.0, 7.0, 10.0]
+# Multipliers - Updated to match frontend (19 bins)
+MULTIPLIERS = [10.0, 8.0, 5.0, 3.0, 1.0, 0.9, 0.6, 0.4, 0.3, 0.2, 0.3, 0.4, 0.6, 0.9, 1.0, 3.0, 5.0, 8.0, 10.0]
+NUM_BINS = len(MULTIPLIERS)  # 19 bins
 
 
 class Ball:
@@ -143,11 +144,11 @@ class Ball:
         if self.y > bin_y:
             self.finished = True
             # Calculate which multiplier bin it landed in based on horizontal position
-            # Bins are positioned at: boardWidth/2 + (i - rows/2) * dx
+            # With 19 bins, bins are positioned at: boardWidth/2 + (i - (NUM_BINS-1)/2) * dx
             # So we reverse this calculation
             relative_x = self.x - (BOARD_WIDTH / 2)
-            bin_index = round((relative_x / COL_SPACING) + (ROWS / 2))
-            bin_index = max(0, min(len(MULTIPLIERS) - 1, bin_index))
+            bin_index = round((relative_x / COL_SPACING) + ((NUM_BINS - 1) / 2))
+            bin_index = max(0, min(NUM_BINS - 1, bin_index))
             self.multiplier = MULTIPLIERS[bin_index]
             
             print(f'🎯 Ball finished! Position: ({self.x:.1f}, {self.y:.1f}) → Bin {bin_index} → {self.multiplier}x')
