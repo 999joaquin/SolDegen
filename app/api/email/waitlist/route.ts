@@ -33,25 +33,73 @@ export async function POST(req: Request) {
     const subject = "You're on the SolDegen waitlist 🎉";
     const resend = new Resend(apiKey);
 
-    // Simple HTML body (no React rendering involved)
+    // Build an absolute logo URL if possible (requires NEXT_PUBLIC_APP_URL)
+    const appUrl = process.env.NEXT_PUBLIC_APP_URL;
+    const logoUrl = appUrl ? `${appUrl.replace(/\/$/, "")}/logo.png` : null;
+    const logoImg = logoUrl
+      ? `<img src="${logoUrl}" alt="SolDegen" width="120" height="120" style="display:block;border:0;outline:none;text-decoration:none;margin:0 auto 12px;border-radius:16px" />`
+      : "";
+
+    // Branded HTML with grid background
     const html = `
-      <div style="background:#0b1020;padding:24px 0;width:100%;font-family:Arial,sans-serif">
+      <div style="
+        background:#0b1020;
+        padding:40px 0;
+        width:100%;
+        font-family:Arial, sans-serif;
+        -webkit-font-smoothing:antialiased;
+        -moz-osx-font-smoothing:grayscale;
+        background-image:
+          linear-gradient(to right, rgba(124,58,237,0.12) 1px, transparent 1px),
+          linear-gradient(to bottom, rgba(124,58,237,0.12) 1px, transparent 1px);
+        background-size:24px 24px;
+        background-position:center center;
+      ">
         <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="border-collapse:collapse;margin:0">
           <tr>
             <td align="center">
               <table role="presentation" width="600" cellspacing="0" cellpadding="0" style="border-collapse:collapse;margin:0 auto">
                 <tr>
-                  <td style="background:#7c3aed;padding:24px 32px;color:#fff;font-size:22px;font-weight:700;text-align:center;border-top-left-radius:12px;border-top-right-radius:12px">
+                  <td style="
+                    background: #7c3aed;
+                    padding: 20px 24px;
+                    color: #ffffff;
+                    font-size: 22px;
+                    font-weight: 700;
+                    text-align: center;
+                    border-top-left-radius: 16px;
+                    border-top-right-radius: 16px;
+                  ">
+                    ${logoImg}
                     SolDegen
                   </td>
                 </tr>
                 <tr>
-                  <td style="background:#fff;padding:32px;border-bottom-left-radius:12px;border-bottom-right-radius:12px;color:#0f172a">
+                  <td style="
+                    background:#0b1020;
+                    height: 16px;
+                  "></td>
+                </tr>
+                <tr>
+                  <td style="
+                    background:#ffffff;
+                    padding:32px;
+                    border-bottom-left-radius:16px;
+                    border-bottom-right-radius:16px;
+                    color:#0f172a;
+                    box-shadow:0 10px 20px rgba(12, 16, 32, 0.35);
+                  ">
                     <h2 style="margin:0 0 12px;font-size:20px;line-height:1.3;color:#0f172a">You're on the waitlist 🎉</h2>
-                    <p style="margin:0 0 12px;font-size:16px;color:#334155">Thanks for signing up! You're officially on the SolDegen waitlist. We'll keep you posted with updates and early access to Crash and Plinko.</p>
-                    <p style="margin:0 0 12px;font-size:16px;color:#334155">In the meantime, stay tuned—degen times ahead.</p>
+                    <p style="margin:0 0 12px;font-size:16px;color:#334155">
+                      Thanks for signing up! You're officially on the SolDegen waitlist. We'll keep you posted with updates and early access to Crash and Plinko.
+                    </p>
+                    <p style="margin:0 0 12px;font-size:16px;color:#334155">
+                      In the meantime, stay tuned—degen times ahead.
+                    </p>
                     <hr style="border:none;border-top:1px solid #e2e8f0;margin:16px 0"/>
-                    <p style="margin:0;font-size:12px;color:#64748b">If you didn't request this, you can ignore this email.</p>
+                    <p style="margin:0;font-size:12px;color:#64748b">
+                      If you didn't request this, you can ignore this email.
+                    </p>
                   </td>
                 </tr>
                 <tr><td style="height:32px"></td></tr>
