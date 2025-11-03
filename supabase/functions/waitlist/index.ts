@@ -15,6 +15,11 @@ async function sendThanksEmail(toEmail: string) {
   }
 
   const subject = "You're on the SolDegen waitlist 🎉"
+  const text = `Thanks for signing up!
+
+You're officially on the SolDegen waitlist. We'll keep you posted with updates and early access to Crash and Plinko.
+
+If you didn't request this, you can ignore this email.`
   const html = `
     <div style="font-family: Arial, sans-serif; line-height:1.6; color:#111">
       <h2 style="margin:0 0 12px">Thanks for signing up!</h2>
@@ -25,9 +30,10 @@ async function sendThanksEmail(toEmail: string) {
     </div>
   `
   const payload = {
-    from: fromEmail,
+    from: `SolDegen <${fromEmail}>`,
     to: [toEmail],
     subject,
+    text,
     html,
   }
 

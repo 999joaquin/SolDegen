@@ -25,15 +25,20 @@ export default function ComingSoonPage() {
 
   async function onSubmit(values: FormValues) {
     const { email } = values;
-    await joinWaitlist(email)
-      .then(() => {
-        showSuccess(`Thanks! We'll notify you at ${email} when SolDrop launches.`);
-        form.reset({ email: "" });
-      })
+    const res = await joinWaitlist(email)
       .catch((err) => {
         console.error(err);
         showError("We couldn't save your email. Please try again.");
+        return null;
       });
+
+    if (!res) return;
+
+    showSuccess(`Thanks! We'll notify you at ${email} when SolDrop launches.`);
+    if (res.emailWarning) {
+      showError(`Saved, but we couldn't send a confirmation email: ${res.emailWarning}`);
+    }
+    form.reset({ email: "" });
   }
 
   return (

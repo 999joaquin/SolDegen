@@ -67,5 +67,5 @@ export async function joinWaitlist(email: string) {
     { body: { email } }
   );
   if (error) throw error;
-  return data;
+  return data as { ok: boolean; emailWarning?: string };
 }
