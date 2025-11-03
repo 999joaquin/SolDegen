@@ -65,6 +65,8 @@ export default function PlinkoPage() {
   const [ballPath, setBallPath] = useState<number[]>([]);
   const [finalBin, setFinalBin] = useState<number | undefined>();
   const [previewBalls, setPreviewBalls] = useState<PreviewBall[]>([]);
+  const [pendingResult, setPendingResult] = useState<BetResult | null>(null);
+  const [physicsMultiplier, setPhysicsMultiplier] = useState<number | null>(null);
 
   useEffect(() => {
     const saved = typeof window !== 'undefined' ? localStorage.getItem('plinko_history') : null;
@@ -133,8 +135,8 @@ export default function PlinkoPage() {
         console.log('🔄 Step 2: Setting finalBin to:', result.bin);
         setFinalBin(result.bin);
         
-        setLastResult(result);
-        setBetHistory(prev => [...prev, result]);
+        // SAVE result untuk nanti - JANGAN update lastResult/history dulu!
+        setPendingResult(result);
         setBalance(result.balanceAfter);
         
         // CRITICAL: Delay animation start sedikit agar state ter-update dulu
@@ -216,9 +218,35 @@ export default function PlinkoPage() {
     socket.emit('join_round', { userId, bet, risk: FIXED_RISK, rows: FIXED_ROWS, clientSeed });
   };
 
-  const handleAnimationComplete = useCallback(() => {
+  const handleAnimationComplete = useCallback((physicsMultiplierParam?: number) => {
+    console.log('🏁 Animation complete! Updating result now...');
     setIsAnimating(false);
-  }, []);
+    
+    // NOW update lastResult and history AFTER animation is done
+    if (pendingResult) {
+      console.log('📝 Updating lastResult and betHistory with:', pendingResult);
+      
+      // IMPORTANT: Use physics multiplier if available (from actual ball landing)
+      let finalResult = pendingResult;
+      const actualMultiplier = physicsMultiplierParam ?? physicsMultiplier;
+      
+      if (actualMultiplier !== null) {
+        console.log(`🔧 Correcting multiplier from ${pendingResult.multiplier} to ${actualMultiplier} (from physics)`);
+        const correctedPayout = bet * actualMultiplier;
+        finalResult = {
+          ...pendingResult,
+          multiplier: actualMultiplier,
+          payout: correctedPayout,
+          result: actualMultiplier >= 1.0 ? 'win' : 'loss'
+        };
+      }
+      
+      setLastResult(finalResult);
+      setBetHistory(prev => [...prev, finalResult]);
+      setPendingResult(null);
+      setPhysicsMultiplier(null);
+    }
+  }, [pendingResult, physicsMultiplier, bet]);
 
   const getButtonText = () => {
     if (roundState === 'RUNNING') return 'Dropping...';

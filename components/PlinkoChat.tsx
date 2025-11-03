@@ -21,7 +21,7 @@ export default function PlinkoChat({ userId, username = `Player${userId}` }: Pli
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [inputMessage, setInputMessage] = useState('');
   const [isConnected, setIsConnected] = useState(false);
-  const messagesEndRef = useRef<HTMLDivElement>(null);
+  const messagesContainerRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
   const userColors: { [key: number]: string } = useRef({}).current;
@@ -34,7 +34,11 @@ export default function PlinkoChat({ userId, username = `Player${userId}` }: Pli
     return userColors[uid];
   };
 
-  const scrollToBottom = () => messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  const scrollToBottom = () => {
+    const container = messagesContainerRef.current;
+    if (!container) return;
+    container.scrollTo({ top: container.scrollHeight, behavior: 'smooth' });
+  };
   useEffect(() => { scrollToBottom(); }, [messages]);
 
   useEffect(() => {
@@ -85,7 +89,7 @@ export default function PlinkoChat({ userId, username = `Player${userId}` }: Pli
         </span>
       </div>
 
-      <div className="flex-1 overflow-y-auto p-4 space-y-2 scroll-smooth">
+      <div ref={messagesContainerRef} className="flex-1 overflow-y-auto p-4 space-y-2 scroll-smooth">
         {messages.length === 0 ? (
           <div className="flex items-center justify-center h-full">
             <p className="text-gray-500 text-sm">No messages yet. Be the first to chat!</p>
@@ -107,7 +111,6 @@ export default function PlinkoChat({ userId, username = `Player${userId}` }: Pli
             );
           })
         )}
-        <div ref={messagesEndRef} />
       </div>
 
       <form onSubmit={handleSendMessage} className="border-t border-gray-700 p-3">

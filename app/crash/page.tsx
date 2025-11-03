@@ -40,6 +40,7 @@ function randomHex16() {
 export default function CrashPage() {
   const [userId, setUserId] = useState<number | null>(null);
   const [bet, setBet] = useState(1);
+  const [betInput, setBetInput] = useState('1');
   const [auto, setAuto] = useState<number | ''>('');
   const [clientSeed, setClientSeed] = useState('');
   const [state, setState] = useState<CrashState>('IDLE');
@@ -472,17 +473,43 @@ export default function CrashPage() {
               <span className="text-purple-400">$</span>
               <input
                 type="number"
-                value={bet}
-                onChange={(e) => setBet(Number(e.target.value))}
+                value={betInput}
+                onChange={(e) => {
+                  const value = e.target.value;
+                  setBetInput(value);
+                  if (value === '' || value === '-' || value === '.') {
+                    // Allow empty or just decimal point
+                  } else {
+                    const numValue = parseFloat(value);
+                    if (!isNaN(numValue) && numValue >= 0) {
+                      setBet(numValue);
+                    }
+                  }
+                }}
+                onBlur={() => {
+                  // On blur, ensure we have a valid number
+                  if (betInput === '' || betInput === '-' || betInput === '.' || isNaN(parseFloat(betInput))) {
+                    setBetInput('0.01');
+                    setBet(0.01);
+                  } else {
+                    const numValue = parseFloat(betInput);
+                    if (numValue < 0.01) {
+                      setBetInput('0.01');
+                      setBet(0.01);
+                    } else {
+                      setBet(numValue);
+                    }
+                  }
+                }}
                 className="flex-1 bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-2 text-white"
                 min="0.01"
                 step="0.01"
               />
             </div>
             <div className="flex gap-2">
-              <button onClick={() => setBet(bet / 2)} className="flex-1 bg-zinc-800 hover:bg-zinc-700 border border-zinc-700 rounded-lg py-2 text-sm">÷2</button>
-              <button onClick={() => setBet(bet * 2)} className="flex-1 bg-zinc-800 hover:bg-zinc-700 border border-zinc-700 rounded-lg py-2 text-sm">2×</button>
-              <button onClick={() => setBet(10)} className="flex-1 bg-zinc-800 hover:bg-zinc-700 border border-zinc-700 rounded-lg py-2 text-sm">MAX</button>
+              <button onClick={() => { const newBet = bet / 2; setBet(newBet); setBetInput(newBet.toString()); }} className="flex-1 bg-zinc-800 hover:bg-zinc-700 border border-zinc-700 rounded-lg py-2 text-sm">÷2</button>
+              <button onClick={() => { const newBet = bet * 2; setBet(newBet); setBetInput(newBet.toString()); }} className="flex-1 bg-zinc-800 hover:bg-zinc-700 border border-zinc-700 rounded-lg py-2 text-sm">2×</button>
+              <button onClick={() => { setBet(10); setBetInput('10'); }} className="flex-1 bg-zinc-800 hover:bg-zinc-700 border border-zinc-700 rounded-lg py-2 text-sm">MAX</button>
             </div>
           </div>
         </div>

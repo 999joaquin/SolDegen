@@ -18,7 +18,7 @@ type PreviewBall = {
 interface PlinkoBoardProps {
   path: number[];
   isAnimating: boolean;
-  onAnimationComplete: () => void;
+  onAnimationComplete: (physicsMultiplier?: number) => void;
   finalBin?: number;
   roundStatus: string;
   previewBalls?: PreviewBall[];
@@ -39,6 +39,7 @@ export default function PlinkoBoard({
   const [usingPhysics, setUsingPhysics] = useState(false);
   const [animationComplete, setAnimationComplete] = useState(false);
   const [showResult, setShowResult] = useState(false);
+  const [physicsMultiplier, setPhysicsMultiplier] = useState<number | null>(null);
   const ballIdRef = useRef<string>('');
   const physicsSocket = useRef<ReturnType<typeof getPhysicsSocket> | null>(null);
   const isInitializedRef = useRef(false);
@@ -163,21 +164,28 @@ export default function PlinkoBoard({
     const handlePhysicsComplete = (data: PhysicsComplete) => {
       console.log(`📥 Received physics_complete:`, data, `Expected ballId:`, ballIdRef.current);
       if (data.ballId === ballIdRef.current) {
-        console.log(`🎯 Physics complete! Ball landed at (${data.finalX}, ${data.finalY})`);
+        console.log(`🎯 Physics complete! Ball landed at (${data.finalX}, ${data.finalY}) with multiplier ${data.multiplier}x`);
         setBallPosition({ x: data.finalX, y: data.finalY });
         setAnimationComplete(true);
+        setPhysicsMultiplier(data.multiplier);
         
         // Wait for ball to settle, then show result
         setTimeout(() => {
           setShowResult(true);
           
-          // Hide ball and complete after showing result
+          // Wait longer to show result, THEN notify parent to update Last Result
           setTimeout(() => {
-            setShowBall(false);
-            setUsingPhysics(false);
-            isInitializedRef.current = false;
-            onAnimationComplete();
-          }, 1000);
+            console.log(`✅ Ball landed in bin, calling onAnimationComplete with multiplier ${data.multiplier}x`);
+            onAnimationComplete(data.multiplier);
+            
+            // Hide ball after notifying parent
+            setTimeout(() => {
+              setShowBall(false);
+              setUsingPhysics(false);
+              setPhysicsMultiplier(null);
+              isInitializedRef.current = false;
+            }, 500);
+          }, 1500); // Show result for 1.5 seconds before updating
         }, 300);
       }
     };
@@ -290,9 +298,9 @@ export default function PlinkoBoard({
     <div className="flex-1 flex flex-col items-center justify-start bg-gradient-to-br from-purple-900 via-blue-900 to-pink-900 rounded-2xl p-6 lg:p-8 relative">
       <div className="mb-4 text-center">
         <div className="text-white text-lg font-semibold">{roundStatus}</div>
-        {showResult && finalBin !== undefined && (
-          <div className={`mt-2 text-2xl font-bold ${multipliers[finalBin] >= 1.0 ? 'text-green-400' : 'text-red-400'} animate-pulse`}>
-            {multipliers[finalBin] >= 1.0 ? '🎉 WIN!' : '💔 LOSS'} - Bin {finalBin} ({formatMultiplier(multipliers[finalBin])})
+        {showResult && physicsMultiplier !== null && (
+          <div className={`mt-2 text-2xl font-bold ${physicsMultiplier >= 1.0 ? 'text-green-400' : 'text-red-400'} animate-pulse`}>
+            {physicsMultiplier >= 1.0 ? '🎉 WIN!' : '💔 LOSS'} - {formatMultiplier(physicsMultiplier)}
           </div>
         )}
       </div>
