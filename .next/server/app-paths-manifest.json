@@ -1,13 +1,3 @@
 {
-  "/crash/page": "app/crash/page.js",
-  "/page": "app/page.js",
-  "/_not-found/page": "app/_not-found/page.js",
-  "/api/crash/history/dedup/route": "app/api/crash/history/dedup/route.js",
-  "/api/crash/fair/route": "app/api/crash/fair/route.js",
-  "/api/crash/balance/[userId]/route": "app/api/crash/balance/[userId]/route.js",
-  "/api/crash/stats/route": "app/api/crash/stats/route.js",
-  "/plinko/page": "app/plinko/page.js",
-  "/api/fair/current/route": "app/api/fair/current/route.js",
-  "/api/demo/stats/route": "app/api/demo/stats/route.js",
-  "/api/demo/balance/route": "app/api/demo/balance/route.js"
+  "/plinko/page": "app/plinko/page.js"
 }

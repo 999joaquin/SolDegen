@@ -67,8 +67,8 @@ export default function PlinkoBoard({
     bins.push({ x, y: binY, index: i });
   }
 
-  // Multipliers disesuaikan dengan server - Win ratio 40:60 (Player 40%, House 60%)
-  const multipliers = [0.2, 0.35, 0.55, 0.9, 1.1, 0.95, 1.25, 1.55, 2.0, 1.55, 1.25, 0.95, 1.1, 0.9, 0.55, 0.35, 0.2];
+  // Multipliers - Max 10x, Win 40% : Loss 60%
+  const multipliers = [10.0, 7.0, 4.0, 2.0, 0.9, 0.6, 0.4, 0.3, 0.2, 0.3, 0.4, 0.6, 0.9, 2.0, 4.0, 7.0, 10.0];
 
   const formatMultiplier = (value: number) => `${value.toFixed(2).replace(/\.0+$/, '').replace(/(\.\d+?)0+$/, '$1')}x`;
 

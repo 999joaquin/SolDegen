@@ -48,8 +48,8 @@ START_Y = 80
 ROW_SPACING = 32
 COL_SPACING = 35
 
-# Multipliers for 16-row board (sync with server.js)
-MULTIPLIERS = [0.2, 0.35, 0.55, 0.9, 1.1, 0.95, 1.25, 1.55, 2.0, 1.55, 1.25, 0.95, 1.1, 0.9, 0.55, 0.35, 0.2]
+# Multipliers for 16-row board - Max 10x, Win 40% : Loss 60%
+MULTIPLIERS = [10.0, 7.0, 4.0, 2.0, 0.9, 0.6, 0.4, 0.3, 0.2, 0.3, 0.4, 0.6, 0.9, 2.0, 4.0, 7.0, 10.0]
 
 
 class Ball:
