@@ -4,6 +4,8 @@ import WaitlistThanks from "../../../../emails/WaitlistThanks";
 
 const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
+export const runtime = "nodejs";
+
 export async function POST(req: Request) {
   const { email } = await req.json().catch(() => ({} as { email?: string }));
 
