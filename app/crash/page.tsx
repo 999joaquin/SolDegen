@@ -641,7 +641,13 @@ export default function CrashPage() {
         </div>
 
         <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-center">
-          <div className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold text-white mb-1 sm:mb-2">{multiplier.toFixed(2)}×</div>
+          <div
+            className={`text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold mb-1 sm:mb-2 transition-colors ${
+              isCrashed ? 'text-red-500' : 'text-white'
+            }`}
+          >
+            {isCrashed ? 'CRASHED' : `${multiplier.toFixed(2)}×`}
+          </div>
           <div className="text-zinc-400 text-xs sm:text-sm md:text-base">CURRENT PAYOUT</div>
         </div>
 
