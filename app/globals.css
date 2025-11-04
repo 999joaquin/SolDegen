@@ -107,7 +107,7 @@
     z-index: 0;
   }
 
-  /* Thruster flame using gradient */
+  /* Thruster flame (legacy single layer) */
   .thruster-flame {
     position: absolute;
     top: 50%;
@@ -117,6 +117,74 @@
     background: linear-gradient(to left, rgba(239,68,68,0.9), rgba(249,115,22,0.85), rgba(253,186,116,0.7), rgba(255,255,255,0));
     filter: blur(1px);
     animation: flame-flicker 0.38s ease-in-out infinite;
+  }
+
+  /* New layered thruster container */
+  .thruster {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    pointer-events: none;
+  }
+
+  /* Base for each flame layer */
+  .flame {
+    position: absolute;
+    right: 0;
+    top: 50%;
+    transform: translateY(-50%);
+    border-radius: 9999px;
+    transform-origin: 100% 50%;
+  }
+
+  .flame-core {
+    background: linear-gradient(
+      to left,
+      rgba(255,255,255,0.95),
+      rgba(255,241,210,0.9),
+      rgba(255,205,90,0.7),
+      rgba(255,255,255,0)
+    );
+    filter: blur(0.4px);
+    animation: flicker-core 320ms ease-in-out infinite;
+  }
+
+  .flame-middle {
+    background: linear-gradient(
+      to left,
+      rgba(255,196,109,0.9),
+      rgba(251,146,60,0.85),
+      rgba(244,114,43,0.65),
+      rgba(255,255,255,0)
+    );
+    filter: blur(0.6px);
+    animation: flicker-middle 420ms ease-in-out infinite;
+  }
+
+  .flame-outer {
+    background: linear-gradient(
+      to left,
+      rgba(244,63,94,0.85),
+      rgba(234,88,12,0.7),
+      rgba(249,115,22,0.5),
+      rgba(255,255,255,0)
+    );
+    filter: blur(1px);
+    animation: flicker-outer 520ms ease-in-out infinite;
+  }
+
+  /* Subtle heat haze shimmer behind the flame */
+  .heat-haze {
+    position: absolute;
+    right: 0;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 84px;
+    height: 16px;
+    background: radial-gradient(circle at 80% 50%, rgba(255,255,255,0.12) 0%, rgba(255,255,255,0.06) 35%, rgba(0,0,0,0) 70%);
+    filter: blur(4px);
+    opacity: 0.35;
+    animation: haze-wave 1.2s linear infinite;
   }
 
   /* Exhaust particles */
@@ -197,6 +265,24 @@
   100% { transform: translateY(-50%) scaleY(0.95); opacity: 0.9; }
 }
 
+@keyframes flicker-core {
+  0% { transform: translateY(-50%) scaleY(0.92); opacity: 0.95; }
+  50% { transform: translateY(-50%) scaleY(1.18); opacity: 1; }
+  100% { transform: translateY(-50%) scaleY(0.96); opacity: 0.98; }
+}
+
+@keyframes flicker-middle {
+  0% { transform: translateY(-50%) scaleY(0.9); opacity: 0.85; }
+  50% { transform: translateY(-50%) scaleY(1.12); opacity: 0.95; }
+  100% { transform: translateY(-50%) scaleY(0.94); opacity: 0.9; }
+}
+
+@keyframes flicker-outer {
+  0% { transform: translateY(-50%) scaleY(0.88); opacity: 0.7; }
+  50% { transform: translateY(-50%) scaleY(1.08); opacity: 0.8; }
+  100% { transform: translateY(-50%) scaleY(0.92); opacity: 0.72; }
+}
+
 @keyframes particle-travel {
   0% { transform: translateX(0) translateY(0); opacity: 0.9; }
   70% { transform: translateX(-70px) translateY(-2px); opacity: 0.6; }
@@ -213,4 +299,10 @@
   25% { transform: translate3d(0.4px,-0.6px,0); }
   50% { transform: translate3d(0.8px,0.4px,0); }
   75% { transform: translate3d(-0.6px,0.2px,0); }
+}
+
+@keyframes haze-wave {
+  0% { background-position: 0 0; opacity: 0.28; }
+  50% { background-position: -20px -2px; opacity: 0.4; }
+  100% { background-position: -40px 0; opacity: 0.3; }
 }

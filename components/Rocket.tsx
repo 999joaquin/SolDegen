@@ -31,6 +31,13 @@ const Rocket: React.FC<RocketProps> = ({
 
   const particles = Array.from({ length: 6 }).map((_, i) => i);
 
+  // Layered flame sizing
+  const coreWidth = flameWidth * 0.55;
+  const midWidth = flameWidth * 0.8;
+  const coreThickness = 6 + Math.min(8, multiplier * 1.2);
+  const midThickness = coreThickness + 2;
+  const outerThickness = midThickness + 2;
+
   return (
     <div
       className="absolute transition-all duration-150 ease-out"
@@ -70,14 +77,38 @@ const Rocket: React.FC<RocketProps> = ({
         {/* Thruster flame */}
         {running && (
           <div
-            className="thruster-flame"
+            className="thruster"
             style={{
-              width: flameWidth,
-              opacity: flameOpacity,
               right: "100%",
               marginRight: "-5px",
             }}
-          />
+          >
+            <span
+              className="flame flame-core"
+              style={{
+                width: coreWidth,
+                height: coreThickness,
+                opacity: Math.min(1, 0.9 + Math.max(0, multiplier - 1) * 0.12),
+              }}
+            />
+            <span
+              className="flame flame-middle"
+              style={{
+                width: midWidth,
+                height: midThickness,
+                opacity: Math.min(0.95, 0.75 + Math.max(0, multiplier - 1) * 0.1),
+              }}
+            />
+            <span
+              className="flame flame-outer"
+              style={{
+                width: flameWidth,
+                height: outerThickness,
+                opacity: flameOpacity,
+              }}
+            />
+            <span className="heat-haze" />
+          </div>
         )}
 
         {/* Exhaust particles */}
