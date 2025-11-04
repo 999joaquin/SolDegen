@@ -4,7 +4,11 @@ import { useState, useEffect, useMemo } from 'react';
 import { crashSocket } from '@/lib/crashSocket';
 import { getCrashFair, getCrashStats, getCrashHistoryDedup, getCrashRoundDetail } from '@/lib/crashApi';
 import CrashChat from '@/components/CrashChat';
+<<<<<<< HEAD
 import Rocket from '@/components/Rocket';
+=======
+import { updateLeaderboard } from '@/lib/leaderboardApi';
+>>>>>>> 3432e0c7e27eaa63d12a56b4e51589e414fadabf
 
 type CrashState = 'IDLE' | 'COUNTDOWN' | 'RUNNING';
 type Chip = { multiplier: number; count: number; rounds: string[]; losers: { userId:number; bet:number }[] };
@@ -228,6 +232,18 @@ export default function CrashPage() {
         setCashoutPending(false);
         showToast(`You cashed out at ${data.atMultiplier.toFixed(2)}×`, 'success');
         refreshBalance();
+        
+        // Update leaderboard for cashout
+        const profit = data.payout - bet;
+        updateLeaderboard({
+          userId,
+          username: `Player${userId}`,
+          game: 'crash',
+          wagered: bet,
+          profit,
+          isWin: profit > 0,
+          payout: data.payout,
+        }).catch(err => console.error('Failed to update leaderboard:', err));
       }
       setRoundPlayers(prev => prev.map(player => {
         if (String(player.id) === String(data.userId)) {
@@ -252,6 +268,20 @@ export default function CrashPage() {
       setTimeout(() => setExplosionPosition(null), 1200);
       showToast(`CRASHED at ${data.crashMultiplier.toFixed(2)}×`, 'error');
       setRoundPlayers(prev => prev.map(player => player.status === 'CASHED' ? player : { ...player, status: 'BUSTED' }));
+      
+      // Update leaderboard for busted players (if user was playing and didn't cashout)
+      if (joined && !cashed && userId) {
+        const profit = -bet; // Lost the bet
+        updateLeaderboard({
+          userId,
+          username: `Player${userId}`,
+          game: 'crash',
+          wagered: bet,
+          profit,
+          isWin: false,
+          payout: 0,
+        }).catch(err => console.error('Failed to update leaderboard:', err));
+      }
     };
 
     const handleRoundFinished = () => {

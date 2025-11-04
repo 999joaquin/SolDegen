@@ -8,6 +8,7 @@ import { getFair, getBalance, getStats } from '@/lib/api';
 import { socket } from '@/lib/socket';
 import { FIXED_ROWS, FIXED_RISK } from '@/lib/constants';
 import { getDemoUserId } from '@/lib/user';
+import { updateLeaderboard } from '@/lib/leaderboardApi';
 
 type RoundState = 'IDLE' | 'COUNTDOWN' | 'RUNNING';
 
@@ -245,8 +246,20 @@ export default function PlinkoPage() {
       setBetHistory(prev => [...prev, finalResult]);
       setPendingResult(null);
       setPhysicsMultiplier(null);
+      
+      // Update leaderboard
+      const profit = finalResult.payout - bet;
+      updateLeaderboard({
+        userId,
+        username,
+        game: 'plinko',
+        wagered: bet,
+        profit,
+        isWin: finalResult.result === 'win',
+        payout: finalResult.payout,
+      }).catch(err => console.error('Failed to update leaderboard:', err));
     }
-  }, [pendingResult, physicsMultiplier, bet]);
+  }, [pendingResult, physicsMultiplier, bet, userId, username]);
 
   const getButtonText = () => {
     if (roundState === 'RUNNING') return 'Dropping...';

@@ -1,7 +1,0 @@
-{
-  "/page": "app/page.js",
-  "/api/crash/history/dedup/route": "app/api/crash/history/dedup/route.js",
-  "/crash/page": "app/crash/page.js",
-  "/api/crash/fair/route": "app/api/crash/fair/route.js",
-  "/api/crash/stats/route": "app/api/crash/stats/route.js"
-}

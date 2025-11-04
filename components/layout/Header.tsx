@@ -63,7 +63,7 @@ const Header = () => {
                 className="h-10 lg:h-12 xl:h-14 w-auto opacity-80 transition-all duration-200 group-hover:opacity-100 group-hover:scale-105"
               />
             </Link>
-            <Link href="#" className="text-purple-300 hover:text-purple-100 transition-colors text-sm xl:text-base">
+            <Link href="/leaderboard" className="text-purple-300 hover:text-purple-100 transition-colors text-sm xl:text-base">
               Leaderboard
             </Link>
           </nav>
@@ -116,7 +116,7 @@ const Header = () => {
                     </Link>
                   </DropdownMenuItem>
                   <DropdownMenuItem asChild className="text-purple-300 focus:bg-purple-700/40 focus:text-purple-100">
-                    <Link href="#" className="flex items-center">
+                    <Link href="/leaderboard" className="flex items-center">
                       <Trophy className="w-4 h-4 mr-2" />
                       Leaderboard
                     </Link>
@@ -156,7 +156,7 @@ const Header = () => {
                 <Link href="/plinko">Plinko</Link>
               </DropdownMenuItem>
               <DropdownMenuItem asChild className="text-purple-300 focus:bg-purple-700/40 focus:text-purple-100 text-sm">
-                <Link href="#">Leaderboard</Link>
+                <Link href="/leaderboard">Leaderboard</Link>
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
