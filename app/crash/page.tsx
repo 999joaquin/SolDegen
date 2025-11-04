@@ -4,6 +4,7 @@ import { useState, useEffect, useMemo } from 'react';
 import { crashSocket } from '@/lib/crashSocket';
 import { getCrashFair, getCrashStats, getCrashHistoryDedup, getCrashRoundDetail } from '@/lib/crashApi';
 import CrashChat from '@/components/CrashChat';
+import Rocket from '@/components/Rocket';
 
 type CrashState = 'IDLE' | 'COUNTDOWN' | 'RUNNING';
 type Chip = { multiplier: number; count: number; rounds: string[]; losers: { userId:number; bet:number }[] };
@@ -656,41 +657,14 @@ export default function CrashPage() {
         />
 
         <div className="absolute inset-0 z-10">
-          {!isCrashed && (
-            <div 
-              className="absolute transition-all duration-150 ease-out" 
-              style={{ 
-                ...getRocketStyle(),
-                transform: 'translate(-50%, -50%)'
-              }}
-            >
-              <div 
-                className="relative"
-                style={{
-                  transform: `rotate(${getRocketRotation()}deg)`,
-                  transition: 'transform 0.12s ease-out'
-                }}
-              >
-                <img 
-                  src="/rocket.png" 
-                  alt="rocket"
-                  className="w-10 h-10 sm:w-12 sm:h-12 md:w-14 md:h-14 lg:w-16 lg:h-16 drop-shadow-lg relative z-10"
-                  style={{
-                    filter: 'drop-shadow(0 0 10px rgba(59, 130, 246, 0.8))'
-                  }}
-                />
-                {state === 'RUNNING' && (
-                  <div 
-                    className="absolute top-1/2 -translate-y-1/2 w-12 sm:w-16 md:w-20 h-2 sm:h-2.5 md:h-3 bg-gradient-to-r from-transparent via-orange-500 to-red-600 opacity-80 blur-md"
-                    style={{
-                      right: '100%',
-                      marginRight: '-4px'
-                    }}
-                  ></div>
-                )}
-              </div>
-            </div>
-          )}
+          <Rocket
+            left={getRocketCoordinates().left}
+            top={getRocketCoordinates().top}
+            rotation={getRocketRotation()}
+            running={state === 'RUNNING'}
+            crashed={isCrashed}
+            multiplier={displayMultiplier}
+          />
 
           {explosionPosition && (
             <div
