@@ -5,7 +5,7 @@ const { spawn } = require('child_process');
 const path = require('path');
 
 const dev = process.env.NODE_ENV !== 'production';
-const hostname = '0.0.0.0';
+const hostname = 'localhost';
 const port = 3000;
 
 const app = next({ dev, hostname, port });
