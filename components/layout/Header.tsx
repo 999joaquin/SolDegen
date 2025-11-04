@@ -42,57 +42,58 @@ const Header = () => {
 
   return (
     <header className="border-b border-purple-700/50 bg-purple-900/20 backdrop-blur-xl shadow-lg shadow-purple-900/30">
-      <div className="container mx-auto px-4 py-4 flex items-center justify-between">
-        <div className="flex items-center space-x-8">
+      <div className="container mx-auto px-3 sm:px-4 py-2 sm:py-3 md:py-4 flex items-center justify-between">
+        <div className="flex items-center space-x-3 sm:space-x-4 md:space-x-8">
           <Link href="/" className="flex items-center">
-            <img src="/logo.png" alt="SolDegen Logo" className="h-12 md:h-14" />
+            <img src="/logo.png" alt="SolDegen Logo" className="h-8 sm:h-10 md:h-12 lg:h-14" />
           </Link>
 
-          <nav className="hidden md:flex items-center space-x-6">
+          <nav className="hidden lg:flex items-center space-x-4 xl:space-x-6">
             <Link href="/crash" aria-label="Crash" className="group">
               <img
                 src="/crash-logo.png"
                 alt="Crash"
-                className="h-12 md:h-14 w-auto opacity-80 transition-all duration-200 group-hover:opacity-100 group-hover:scale-105"
+                className="h-10 lg:h-12 xl:h-14 w-auto opacity-80 transition-all duration-200 group-hover:opacity-100 group-hover:scale-105"
               />
             </Link>
             <Link href="/plinko" aria-label="Plinko" className="group">
               <img
                 src="/plinko-logo.png"
                 alt="Plinko"
-                className="h-12 md:h-14 w-auto opacity-80 transition-all duration-200 group-hover:opacity-100 group-hover:scale-105"
+                className="h-10 lg:h-12 xl:h-14 w-auto opacity-80 transition-all duration-200 group-hover:opacity-100 group-hover:scale-105"
               />
             </Link>
-            <Link href="#" className="text-purple-300 hover:text-purple-100 transition-colors">
+            <Link href="#" className="text-purple-300 hover:text-purple-100 transition-colors text-sm xl:text-base">
               Leaderboard
             </Link>
           </nav>
         </div>
 
-        <div className="flex items-center space-x-4">
+        <div className="flex items-center space-x-2 sm:space-x-3 md:space-x-4">
           {!connected ? (
             <Button
               variant="outline"
-              className="border-purple-600 text-purple-300 hover:bg-purple-600 hover:text-white"
+              className="border-purple-600 text-purple-300 hover:bg-purple-600 hover:text-white text-xs sm:text-sm px-2 sm:px-3 md:px-4 py-1.5 sm:py-2"
               onClick={() => setOpen(true)}
             >
-              <Wallet className="w-4 h-4 mr-2" />
-              Connect Wallet
+              <Wallet className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2" />
+              <span className="hidden sm:inline">Connect Wallet</span>
+              <span className="sm:hidden">Connect</span>
             </Button>
           ) : (
             <>
-              <div className="hidden sm:block">
+              <div className="hidden md:block">
                 <BalanceBadge address={address || ""} />
               </div>
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" className="flex items-center space-x-2">
-                    <Avatar className="w-6 h-6">
+                  <Button variant="ghost" className="flex items-center space-x-1 sm:space-x-2 px-2 sm:px-3 md:px-4 py-1.5 sm:py-2">
+                    <Avatar className="w-5 h-5 sm:w-6 sm:h-6">
                       <AvatarFallback className="bg-purple-700 text-white text-xs">
                         {username?.charAt(0).toUpperCase() || "U"}
                       </AvatarFallback>
                     </Avatar>
-                    <span className="hidden md:inline text-purple-200">
+                    <span className="hidden lg:inline text-purple-200 text-sm">
                       {username || shortenAddress(address || "")}
                     </span>
                   </Button>
@@ -143,18 +144,18 @@ const Header = () => {
           )}
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="icon" className="md:hidden" aria-label="Open menu">
-                <Menu className="w-5 h-5" />
+              <Button variant="ghost" size="icon" className="lg:hidden p-1.5 sm:p-2" aria-label="Open menu">
+                <Menu className="w-4 h-4 sm:w-5 sm:h-5" />
               </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-44 bg-black/90 border-purple-700/40">
-              <DropdownMenuItem asChild className="text-purple-300 focus:bg-purple-700/40 focus:text-purple-100">
+            <DropdownMenuContent align="end" className="w-40 sm:w-44 bg-black/90 border-purple-700/40">
+              <DropdownMenuItem asChild className="text-purple-300 focus:bg-purple-700/40 focus:text-purple-100 text-sm">
                 <Link href="/crash">Crash</Link>
               </DropdownMenuItem>
-              <DropdownMenuItem asChild className="text-purple-300 focus:bg-purple-700/40 focus:text-purple-100">
+              <DropdownMenuItem asChild className="text-purple-300 focus:bg-purple-700/40 focus:text-purple-100 text-sm">
                 <Link href="/plinko">Plinko</Link>
               </DropdownMenuItem>
-              <DropdownMenuItem asChild className="text-purple-300 focus:bg-purple-700/40 focus:text-purple-100">
+              <DropdownMenuItem asChild className="text-purple-300 focus:bg-purple-700/40 focus:text-purple-100 text-sm">
                 <Link href="#">Leaderboard</Link>
               </DropdownMenuItem>
             </DropdownMenuContent>

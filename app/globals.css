@@ -67,18 +67,65 @@
 
 @layer base {
   * { @apply border-border; }
-  body { @apply bg-background text-foreground; }
+  body { 
+    @apply bg-background text-foreground; 
+    overflow-x: hidden;
+  }
+  
+  /* Prevent horizontal scroll on mobile */
+  html {
+    overflow-x: hidden;
+  }
+  
+  /* Smooth scrolling */
+  html {
+    scroll-behavior: smooth;
+  }
 }
 
 @layer components {
   .explosion {
-    width: 5rem;
-    height: 5rem;
+    width: 3rem;
+    height: 3rem;
     border-radius: 9999px;
     background: radial-gradient(circle at center, rgba(255, 184, 108, 0.9) 0%, rgba(248, 113, 113, 0.8) 40%, rgba(239, 68, 68, 0.0) 75%);
     animation: rocket-explosion 1s ease-out forwards;
     opacity: 0.9;
     pointer-events: none;
+  }
+  
+  @media (min-width: 640px) {
+    .explosion {
+      width: 4rem;
+      height: 4rem;
+    }
+  }
+  
+  @media (min-width: 768px) {
+    .explosion {
+      width: 5rem;
+      height: 5rem;
+    }
+  }
+  
+  /* Custom scrollbar for better mobile experience */
+  ::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+  
+  ::-webkit-scrollbar-track {
+    background: rgba(0, 0, 0, 0.1);
+    border-radius: 10px;
+  }
+  
+  ::-webkit-scrollbar-thumb {
+    background: rgba(168, 85, 247, 0.3);
+    border-radius: 10px;
+  }
+  
+  ::-webkit-scrollbar-thumb:hover {
+    background: rgba(168, 85, 247, 0.5);
   }
 }
 

@@ -267,8 +267,8 @@ export default function PlinkoPage() {
   };
 
   return (
-    <div className="min-h-[calc(100vh-120px)] md:min-h-[calc(100vh-88px)] w-full pb-10">
-      <div className="grid w-full gap-6 grid-cols-1 md:grid-cols-[20rem_minmax(0,1fr)] lg:grid-cols-[20rem_minmax(0,1fr)_20rem]">
+    <div className="min-h-[calc(100vh-120px)] md:min-h-[calc(100vh-88px)] w-full pb-4 sm:pb-6 md:pb-10">
+      <div className="grid w-full gap-3 sm:gap-4 md:gap-6 grid-cols-1 lg:grid-cols-[18rem_minmax(0,1fr)] xl:grid-cols-[20rem_minmax(0,1fr)_20rem]">
         <Controls
           bet={bet}
           setBet={setBet}

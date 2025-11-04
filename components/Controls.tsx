@@ -79,49 +79,49 @@ export default function Controls({
   };
 
   return (
-  <div className="w-full md:w-80 bg-gray-900 p-6 rounded-2xl shadow-lg space-y-6">
-      <h2 className="text-white text-xl font-semibold">Controls</h2>
-      <div className="space-y-3">
-        <label className="text-white text-sm font-medium">Bet Amount (SOL)</label>
+  <div className="w-full lg:w-72 xl:w-80 bg-zinc-900/70 border border-zinc-800 p-4 sm:p-5 md:p-6 rounded-xl sm:rounded-2xl space-y-4 sm:space-y-5 md:space-y-6">
+      <h2 className="text-white text-lg sm:text-xl font-semibold">Controls</h2>
+      <div className="space-y-2 sm:space-y-3">
+        <label className="text-zinc-300 text-xs sm:text-sm font-medium">Bet Amount (SOL)</label>
         <div className="relative">
           <input
             type="number"
             value={betInput}
             onChange={(e) => handleBetChange(e.target.value)}
             onBlur={handleBlur}
-            className="w-full bg-gray-800 text-white px-4 py-3 pr-16 rounded-xl border border-gray-700 focus:border-lime-400 focus:outline-none"
+            className="w-full bg-zinc-800 text-white px-3 sm:px-4 py-2 sm:py-3 pr-12 sm:pr-16 rounded-lg sm:rounded-xl border border-zinc-700 focus:border-purple-400 focus:outline-none text-sm sm:text-base"
             step="0.1"
             min="0.1"
             max="100"
             disabled={disabled}
           />
-          <span className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 text-sm font-medium">SOL</span>
+          <span className="absolute right-3 sm:right-4 top-1/2 -translate-y-1/2 text-zinc-400 text-xs sm:text-sm font-medium">SOL</span>
         </div>
         <div className="flex space-x-2">
-          <button onClick={halveBet} disabled={disabled} className="flex-1 bg-gray-800 hover:bg-gray-700 text-white py-2 px-4 rounded-xl border border-gray-700 disabled:opacity-50 transition-colors">÷2</button>
-          <button onClick={doubleBet} disabled={disabled} className="flex-1 bg-gray-800 hover:bg-gray-700 text-white py-2 px-4 rounded-xl border border-gray-700 disabled:opacity-50 transition-colors">2×</button>
+          <button onClick={halveBet} disabled={disabled} className="flex-1 bg-zinc-800 hover:bg-zinc-700 text-white py-1.5 sm:py-2 px-2 sm:px-4 rounded-lg sm:rounded-xl border border-zinc-700 disabled:opacity-50 transition-colors text-sm sm:text-base">÷2</button>
+          <button onClick={doubleBet} disabled={disabled} className="flex-1 bg-zinc-800 hover:bg-zinc-700 text-white py-1.5 sm:py-2 px-2 sm:px-4 rounded-lg sm:rounded-xl border border-zinc-700 disabled:opacity-50 transition-colors text-sm sm:text-base">2×</button>
         </div>
       </div>
 
-      <div className="space-y-3">
-        <label className="text-white text-sm font-medium">Client Seed</label>
+      <div className="space-y-2 sm:space-y-3">
+        <label className="text-zinc-300 text-xs sm:text-sm font-medium">Client Seed</label>
         <div className="flex space-x-2">
           <input
             type="text"
             value={clientSeed}
             onChange={(e) => setClientSeed(e.target.value)}
-            className="flex-1 bg-gray-800 text-white px-4 py-3 rounded-xl border border-gray-700 focus:border-lime-400 focus:outline-none text-sm font-mono"
+            className="flex-1 bg-zinc-800 text-white px-2 sm:px-4 py-2 sm:py-3 rounded-lg sm:rounded-xl border border-zinc-700 focus:border-purple-400 focus:outline-none text-xs sm:text-sm font-mono"
             disabled={disabled}
           />
-          <button onClick={randomizeSeed} disabled={disabled} className="bg-gray-800 hover:bg-gray-700 text-white px-4 py-3 rounded-xl border border-gray-700 disabled:opacity-50 transition-colors">🎲</button>
+          <button onClick={randomizeSeed} disabled={disabled} className="bg-zinc-800 hover:bg-zinc-700 text-white px-3 sm:px-4 py-2 sm:py-3 rounded-lg sm:rounded-xl border border-zinc-700 disabled:opacity-50 transition-colors text-lg sm:text-xl">🎲</button>
         </div>
       </div>
 
-      <button onClick={onJoinRound} disabled={disabled} className="w-full bg-lime-400 hover:bg-lime-500 text-black font-semibold py-4 px-6 rounded-xl transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
+      <button onClick={onJoinRound} disabled={disabled} className="w-full bg-purple-500 hover:bg-purple-400 text-white font-semibold py-3 sm:py-4 px-4 sm:px-6 rounded-lg sm:rounded-xl transition-colors disabled:opacity-50 disabled:cursor-not-allowed text-sm sm:text-base">
         {buttonText}
       </button>
 
-      <div className="text-gray-400 text-xs text-center">Fixed: rows = {FIXED_ROWS}, risk = {FIXED_RISK}</div>
+      <div className="text-zinc-400 text-[10px] sm:text-xs text-center">Fixed: rows = {FIXED_ROWS}, risk = {FIXED_RISK}</div>
     </div>
   );
 }

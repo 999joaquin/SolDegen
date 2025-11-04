@@ -297,30 +297,21 @@ export default function PlinkoBoard({
   }, [isAnimating, path, finalBin, onAnimationComplete, usingPhysics]);
 
   return (
-    <div className="flex-1 flex flex-col items-center justify-start bg-gradient-to-br from-purple-900 via-blue-900 to-pink-900 rounded-2xl p-6 lg:p-8 relative">
-      <div className="mb-4 text-center">
-        <div className="text-white text-lg font-semibold">{roundStatus}</div>
+    <div className="flex-1 flex flex-col items-center justify-start p-3 sm:p-4 md:p-6 lg:p-8 relative">
+      <div className="mb-2 sm:mb-4 text-center">
+        <div className="text-zinc-400 text-sm sm:text-base md:text-lg font-medium">{roundStatus}</div>
         {showResult && physicsMultiplier !== null && (
-          <div className={`mt-2 text-2xl font-bold ${physicsMultiplier >= 1.0 ? 'text-green-400' : 'text-red-400'} animate-pulse`}>
+          <div className={`mt-1 sm:mt-2 text-lg sm:text-xl md:text-2xl font-bold ${physicsMultiplier >= 1.0 ? 'text-green-400' : 'text-red-400'} animate-pulse`}>
             {physicsMultiplier >= 1.0 ? '🎉 WIN!' : '💔 LOSS'} - {formatMultiplier(physicsMultiplier)}
           </div>
         )}
       </div>
 
-  <div className="relative w-full mx-auto px-2 sm:px-4">
-        <svg width={boardWidth} height={boardHeight} viewBox={`0 0 ${boardWidth} ${boardHeight}`} className="drop-shadow-lg w-full h-auto" preserveAspectRatio="xMidYMid meet">
-          <defs>
-            <linearGradient id="boardGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-              <stop offset="0%" stopColor="#1f2937" />
-              <stop offset="100%" stopColor="#374151" />
-            </linearGradient>
-          </defs>
-          {/* Board background - FULL WIDTH */}
-          <rect x="0" y="0" width={boardWidth} height={boardHeight} fill="url(#boardGradient)" rx="20" stroke="#6b7280" strokeWidth="3" />
-          
+  <div className="relative w-full mx-auto px-1 sm:px-2 md:px-4">
+        <svg width={boardWidth} height={boardHeight} viewBox={`0 0 ${boardWidth} ${boardHeight}`} className="w-full h-auto max-h-[50vh] sm:max-h-[60vh] md:max-h-none" preserveAspectRatio="xMidYMid meet">
           {/* Pegs */}
           {pegs.map((peg, index) => (
-            <circle key={index} cx={peg.x} cy={peg.y} r="5" fill="#9ca3af" className="drop-shadow-sm" />
+            <circle key={index} cx={peg.x} cy={peg.y} r="5" fill="#71717a" className="drop-shadow-sm" />
           ))}
           
           {/* Bins - NO COLOR until ball lands */}
@@ -336,8 +327,8 @@ export default function PlinkoBoard({
                   y={bin.y} 
                   width="30" 
                   height="50" 
-                  fill="#374151" 
-                  stroke="#4b5563"
+                  fill="#27272a" 
+                  stroke="#3f3f46"
                   strokeWidth="1.5"
                   rx="6" 
                 />
@@ -349,7 +340,7 @@ export default function PlinkoBoard({
                   textAnchor="middle" 
                   className="font-bold" 
                   fontSize="12"
-                  fill={isWinBin ? "#10b981" : "#9ca3af"}
+                  fill={isWinBin ? "#10b981" : "#71717a"}
                 >
                   {formatMultiplier(multipliers[index])}
                 </text>
@@ -384,7 +375,7 @@ export default function PlinkoBoard({
           )}
           
           {/* Start position indicator */}
-          <circle cx={boardWidth / 2} cy={80} r="8" fill="#10b981" className="opacity-50" />
+          <circle cx={boardWidth / 2} cy={80} r="8" fill="#22c55e" className="opacity-40" />
         </svg>
 
         {animatedPreviewBalls.length > 0 && (

@@ -455,22 +455,22 @@ export default function CrashPage() {
   };
 
   return (
-    <div className="relative min-h-[calc(100vh-120px)] md:min-h-[calc(100vh-88px)] w-full pb-10">
+    <div className="relative min-h-[calc(100vh-120px)] md:min-h-[calc(100vh-88px)] w-full pb-4 sm:pb-6 md:pb-10">
       {toast && (
-        <div className={`fixed top-20 right-6 z-50 px-4 py-2 rounded-lg text-white font-semibold ${
+        <div className={`fixed top-20 right-3 sm:right-6 z-50 px-3 sm:px-4 py-2 rounded-lg text-white font-semibold text-xs sm:text-sm ${
           toast.type === 'success' ? 'bg-green-600' : toast.type === 'error' ? 'bg-red-600' : 'bg-blue-600'
         }`}>
           {toast.message}
         </div>
       )}
 
-  <div className="grid w-full gap-6 grid-cols-1 md:grid-cols-[20rem_minmax(0,1fr)] lg:grid-cols-[20rem_minmax(0,1fr)_20rem]">
-  <div className="w-full md:w-80 space-y-4">
-        <div className="rounded-2xl bg-zinc-900/70 border border-zinc-800 p-4">
-          <h3 className="text-lg font-semibold mb-4">Bet Amount</h3>
-          <div className="space-y-3">
+  <div className="grid w-full gap-3 sm:gap-4 md:gap-6 grid-cols-1 lg:grid-cols-[18rem_minmax(0,1fr)] xl:grid-cols-[20rem_minmax(0,1fr)_20rem]">
+  <div className="w-full lg:w-72 xl:w-80 space-y-3 sm:space-y-4">
+        <div className="rounded-xl sm:rounded-2xl bg-zinc-900/70 border border-zinc-800 p-3 sm:p-4">
+          <h3 className="text-base sm:text-lg font-semibold mb-3 sm:mb-4">Bet Amount</h3>
+          <div className="space-y-2 sm:space-y-3">
             <div className="flex items-center gap-2">
-              <span className="text-purple-400">$</span>
+              <span className="text-purple-400 text-sm sm:text-base">$</span>
               <input
                 type="number"
                 value={betInput}
@@ -501,42 +501,42 @@ export default function CrashPage() {
                     }
                   }
                 }}
-                className="flex-1 bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-2 text-white"
+                className="flex-1 bg-zinc-800 border border-zinc-700 rounded-lg px-2 sm:px-3 py-1.5 sm:py-2 text-white text-sm sm:text-base"
                 min="0.01"
                 step="0.01"
               />
             </div>
             <div className="flex gap-2">
-              <button onClick={() => { const newBet = bet / 2; setBet(newBet); setBetInput(newBet.toString()); }} className="flex-1 bg-zinc-800 hover:bg-zinc-700 border border-zinc-700 rounded-lg py-2 text-sm">÷2</button>
-              <button onClick={() => { const newBet = bet * 2; setBet(newBet); setBetInput(newBet.toString()); }} className="flex-1 bg-zinc-800 hover:bg-zinc-700 border border-zinc-700 rounded-lg py-2 text-sm">2×</button>
-              <button onClick={() => { setBet(10); setBetInput('10'); }} className="flex-1 bg-zinc-800 hover:bg-zinc-700 border border-zinc-700 rounded-lg py-2 text-sm">MAX</button>
+              <button onClick={() => { const newBet = bet / 2; setBet(newBet); setBetInput(newBet.toString()); }} className="flex-1 bg-zinc-800 hover:bg-zinc-700 border border-zinc-700 rounded-lg py-1.5 sm:py-2 text-xs sm:text-sm">÷2</button>
+              <button onClick={() => { const newBet = bet * 2; setBet(newBet); setBetInput(newBet.toString()); }} className="flex-1 bg-zinc-800 hover:bg-zinc-700 border border-zinc-700 rounded-lg py-1.5 sm:py-2 text-xs sm:text-sm">2×</button>
+              <button onClick={() => { setBet(10); setBetInput('10'); }} className="flex-1 bg-zinc-800 hover:bg-zinc-700 border border-zinc-700 rounded-lg py-1.5 sm:py-2 text-xs sm:text-sm">MAX</button>
             </div>
           </div>
         </div>
 
-        <div className="rounded-2xl bg-zinc-900/70 border border-zinc-800 p-4">
-          <h3 className="text-lg font-semibold mb-4">Auto Cashout</h3>
+        <div className="rounded-xl sm:rounded-2xl bg-zinc-900/70 border border-zinc-800 p-3 sm:p-4">
+          <h3 className="text-base sm:text-lg font-semibold mb-3 sm:mb-4">Auto Cashout</h3>
           <div className="flex items-center gap-2">
             <input
               type="number"
               value={auto}
               onChange={(e) => setAuto(e.target.value === '' ? '' : Number(e.target.value))}
               placeholder="X.xx"
-              className="flex-1 bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-2 text-white"
+              className="flex-1 bg-zinc-800 border border-zinc-700 rounded-lg px-2 sm:px-3 py-1.5 sm:py-2 text-white text-sm sm:text-base"
               min="1.01"
               step="0.01"
             />
-            <span className="text-zinc-400">×</span>
+            <span className="text-zinc-400 text-sm sm:text-base">×</span>
           </div>
         </div>
 
-        <div className="rounded-2xl bg-zinc-900/70 border border-zinc-800 p-4">
-          <h3 className="text-lg font-semibold mb-4">Client Seed</h3>
+        <div className="rounded-xl sm:rounded-2xl bg-zinc-900/70 border border-zinc-800 p-3 sm:p-4">
+          <h3 className="text-base sm:text-lg font-semibold mb-3 sm:mb-4">Client Seed</h3>
           <input
             type="text"
             value={clientSeed}
             onChange={(e) => setClientSeed(e.target.value)}
-            className="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-2 text-white text-sm font-mono"
+            className="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-2 sm:px-3 py-1.5 sm:py-2 text-white text-xs sm:text-sm font-mono"
           />
         </div>
 
@@ -544,7 +544,7 @@ export default function CrashPage() {
           <button
             onClick={handleJoinRound}
             disabled={state === 'RUNNING' || joined}
-            className="w-full bg-purple-500 hover:bg-purple-400 disabled:bg-zinc-600 disabled:cursor-not-allowed text-black font-semibold rounded-xl py-3 transition-colors"
+            className="w-full bg-purple-500 hover:bg-purple-400 disabled:bg-zinc-600 disabled:cursor-not-allowed text-black font-semibold rounded-lg sm:rounded-xl py-2.5 sm:py-3 transition-colors text-sm sm:text-base"
           >
             {state === 'RUNNING' ? 'Round In Progress' : joined ? 'Joined - Waiting...' : 'Start / Join Round'}
           </button>
@@ -552,20 +552,20 @@ export default function CrashPage() {
           <button
             onClick={handleCashout}
             disabled={state !== 'RUNNING' || !joined || cashed || cashoutPending}
-            className="w-full bg-red-500 hover:bg-red-600 disabled:bg-zinc-600 disabled:cursor-not-allowed text-white font-semibold rounded-xl py-3 transition-colors"
+            className="w-full bg-red-500 hover:bg-red-600 disabled:bg-zinc-600 disabled:cursor-not-allowed text-white font-semibold rounded-lg sm:rounded-xl py-2.5 sm:py-3 transition-colors text-sm sm:text-base"
           >
             {cashed ? 'Cashed Out' : cashoutPending ? 'Cashing out…' : 'Cashout'}
           </button>
         </div>
 
-        <div className="rounded-2xl bg-zinc-900/70 border border-zinc-800 p-4">
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="text-lg font-semibold text-white">Players</h3>
-            <span className="text-sm font-semibold text-purple-300">{roundPlayers.length || players}</span>
+        <div className="rounded-xl sm:rounded-2xl bg-zinc-900/70 border border-zinc-800 p-3 sm:p-4">
+          <div className="flex items-center justify-between mb-3 sm:mb-4">
+            <h3 className="text-base sm:text-lg font-semibold text-white">Players</h3>
+            <span className="text-xs sm:text-sm font-semibold text-purple-300">{roundPlayers.length || players}</span>
           </div>
-          <div className="space-y-2 max-h-60 overflow-auto pr-1">
+          <div className="space-y-1.5 sm:space-y-2 max-h-48 sm:max-h-60 overflow-auto pr-1">
             {roundPlayers.length === 0 ? (
-              <div className="text-sm text-zinc-500">Waiting for players…</div>
+              <div className="text-xs sm:text-sm text-zinc-500">Waiting for players…</div>
             ) : (
               roundPlayers.map((player) => {
                 const initials = typeof player.username === 'string' && player.username.trim().length > 0
@@ -583,24 +583,24 @@ export default function CrashPage() {
                 return (
                   <div
                     key={`${player.id}-${player.username}`}
-                    className="flex items-center justify-between rounded-xl bg-zinc-800/60 border border-zinc-700/60 px-3 py-2"
+                    className="flex items-center justify-between rounded-lg sm:rounded-xl bg-zinc-800/60 border border-zinc-700/60 px-2 sm:px-3 py-1.5 sm:py-2"
                   >
-                    <div className="flex items-center gap-3">
-                      <div className="w-9 h-9 rounded-full bg-purple-500/15 border border-purple-500/40 flex items-center justify-center text-xs font-semibold text-purple-200">
+                    <div className="flex items-center gap-2 sm:gap-3">
+                      <div className="w-7 h-7 sm:w-9 sm:h-9 rounded-full bg-purple-500/15 border border-purple-500/40 flex items-center justify-center text-[10px] sm:text-xs font-semibold text-purple-200">
                         {initials}
                       </div>
                       <div>
-                        <div className="text-sm font-medium text-white leading-tight">{player.username}</div>
-                        <div className="text-xs text-zinc-400">Bet {betText}</div>
+                        <div className="text-xs sm:text-sm font-medium text-white leading-tight">{player.username}</div>
+                        <div className="text-[10px] sm:text-xs text-zinc-400">Bet {betText}</div>
                       </div>
                     </div>
                     <div className="text-right">
-                      <div className={`text-xs font-semibold ${statusColor}`}>{player.status.replace('_', '-')}</div>
+                      <div className={`text-[10px] sm:text-xs font-semibold ${statusColor}`}>{player.status.replace('_', '-')}</div>
                       {cashoutText !== '—' && (
-                        <div className="text-xs text-purple-300">Cashout {cashoutText}</div>
+                        <div className="text-[10px] sm:text-xs text-purple-300">Cashout {cashoutText}</div>
                       )}
                       {payoutText && (
-                        <div className="text-xs text-zinc-400">Payout {payoutText}</div>
+                        <div className="text-[10px] sm:text-xs text-zinc-400">Payout {payoutText}</div>
                       )}
                     </div>
                   </div>
@@ -611,21 +611,21 @@ export default function CrashPage() {
         </div>
         </div>
 
-  <div className="flex-1 h-full rounded-2xl bg-zinc-900/70 border border-zinc-800 p-6 relative overflow-hidden">
-        <div className="absolute top-6 left-6 right-6 z-30 pointer-events-none">
-          <div className="flex gap-2 overflow-x-auto pb-2 -mt-2 pointer-events-auto">
+  <div className="flex-1 min-h-[300px] sm:min-h-[400px] md:min-h-[500px] rounded-xl sm:rounded-2xl bg-zinc-900/70 border border-zinc-800 p-3 sm:p-4 md:p-6 relative overflow-hidden">
+        <div className="absolute top-3 sm:top-6 left-3 sm:left-6 right-3 sm:right-6 z-30 pointer-events-none">
+          <div className="flex gap-1.5 sm:gap-2 overflow-x-auto pb-2 -mt-2 pointer-events-auto">
             {chips.map((c) => {
               const color = c.multiplier <= 1.10 ? 'bg-red-600' : c.multiplier <= 2 ? 'bg-yellow-600' : 'bg-green-600';
               return (
                 <button
                   key={c.multiplier}
                   onClick={() => setSelectedRoundId(c.rounds[0])}
-                  className={`relative px-3 py-1 rounded-full text-white text-sm ${color}`}
+                  className={`relative px-2 sm:px-3 py-0.5 sm:py-1 rounded-full text-white text-xs sm:text-sm ${color}`}
                   title={`Rounds: ${c.rounds.length}`}
                 >
                   {c.multiplier.toFixed(2)}×
                   {c.count > 1 && (
-                    <span className="absolute -top-2 -right-2 bg-black/80 rounded-full text-xs px-1.5 py-0.5 border border-white/20">
+                    <span className="absolute -top-1.5 sm:-top-2 -right-1.5 sm:-right-2 bg-black/80 rounded-full text-[10px] sm:text-xs px-1 sm:px-1.5 py-0.5 border border-white/20">
                       {c.count}
                     </span>
                   )}
@@ -635,13 +635,13 @@ export default function CrashPage() {
           </div>
         </div>
         
-        <div className="absolute top-16 left-6 right-6 text-center z-10">
-          <div className="text-zinc-400 font-medium">{getHudMessage()}</div>
+        <div className="absolute top-12 sm:top-16 left-3 sm:left-6 right-3 sm:right-6 text-center z-10">
+          <div className="text-zinc-400 font-medium text-xs sm:text-sm md:text-base">{getHudMessage()}</div>
         </div>
 
         <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-center">
-          <div className="text-6xl font-bold text-white mb-2">{multiplier.toFixed(2)}×</div>
-          <div className="text-zinc-400">CURRENT PAYOUT</div>
+          <div className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold text-white mb-1 sm:mb-2">{multiplier.toFixed(2)}×</div>
+          <div className="text-zinc-400 text-xs sm:text-sm md:text-base">CURRENT PAYOUT</div>
         </div>
 
         <div 
@@ -674,14 +674,14 @@ export default function CrashPage() {
                 <img 
                   src="/rocket.png" 
                   alt="rocket"
-                  className="w-16 h-16 drop-shadow-lg relative z-10"
+                  className="w-10 h-10 sm:w-12 sm:h-12 md:w-14 md:h-14 lg:w-16 lg:h-16 drop-shadow-lg relative z-10"
                   style={{
                     filter: 'drop-shadow(0 0 10px rgba(59, 130, 246, 0.8))'
                   }}
                 />
                 {state === 'RUNNING' && (
                   <div 
-                    className="absolute top-1/2 -translate-y-1/2 w-20 h-3 bg-gradient-to-r from-transparent via-orange-500 to-red-600 opacity-80 blur-md"
+                    className="absolute top-1/2 -translate-y-1/2 w-12 sm:w-16 md:w-20 h-2 sm:h-2.5 md:h-3 bg-gradient-to-r from-transparent via-orange-500 to-red-600 opacity-80 blur-md"
                     style={{
                       right: '100%',
                       marginRight: '-4px'
@@ -706,9 +706,9 @@ export default function CrashPage() {
           )}
         </div>
 
-        <div className="absolute right-6 top-20 bottom-20 text-zinc-500 text-xs pointer-events-none">
-          <div className="relative w-16 h-full">
-            <div className="absolute inset-y-0 right-6 border-r border-zinc-700/60" />
+        <div className="absolute right-3 sm:right-6 top-16 sm:top-20 bottom-16 sm:bottom-20 text-zinc-500 text-[10px] sm:text-xs pointer-events-none">
+          <div className="relative w-12 sm:w-16 h-full">
+            <div className="absolute inset-y-0 right-4 sm:right-6 border-r border-zinc-700/60" />
             <div
               className="absolute right-[5px] bottom-0 w-[6px] rounded-t-full bg-gradient-to-t from-purple-500/70 via-purple-400/40 to-transparent"
               style={{
@@ -721,29 +721,29 @@ export default function CrashPage() {
               return (
                 <div
                   key={mark}
-                  className="absolute flex items-center gap-2"
+                  className="absolute flex items-center gap-1 sm:gap-2"
                   style={{
                     top: `${topPercent}%`,
                     right: 0,
                     transform: 'translateY(-50%)'
                   }}
                 >
-                  <div className="w-3 h-px bg-zinc-500" />
-                  <span>{formatMultiplier(mark)}×</span>
+                  <div className="w-2 sm:w-3 h-px bg-zinc-500" />
+                  <span className="text-[10px] sm:text-xs">{formatMultiplier(mark)}×</span>
                 </div>
               );
             })}
 
             <div
-              className="absolute right-[-12px] flex items-center gap-2 text-purple-400 font-semibold"
+              className="absolute right-[-8px] sm:right-[-12px] flex items-center gap-1 sm:gap-2 text-purple-400 font-semibold"
               style={{
                 top: `${getVerticalPercent(displayMultiplier)}%`,
                 transform: 'translateY(-50%)',
                 transition: 'top 0.15s linear'
               }}
             >
-              <div className="w-4 h-[2px] bg-purple-400 shadow-[0_0_6px_rgba(168,85,247,0.8)]" />
-              <span className="text-sm bg-zinc-900/90 px-1.5 py-0.5 rounded-md border border-purple-400/40">
+              <div className="w-3 sm:w-4 h-[1.5px] sm:h-[2px] bg-purple-400 shadow-[0_0_6px_rgba(168,85,247,0.8)]" />
+              <span className="text-[10px] sm:text-xs md:text-sm bg-zinc-900/90 px-1 sm:px-1.5 py-0.5 rounded-md border border-purple-400/40">
                 {formatMultiplier(displayMultiplier)}×
               </span>
             </div>
@@ -751,39 +751,39 @@ export default function CrashPage() {
         </div>
         </div>
 
-  <div className="w-full md:w-80 space-y-4">
-        <div className="rounded-2xl bg-zinc-900/70 border border-zinc-800 p-4">
-          <h3 className="text-lg font-semibold mb-4">Game Stats</h3>
-          <div className="space-y-3 text-sm">
-            <div className="flex justify-between">
+  <div className="w-full lg:w-72 xl:w-80 space-y-3 sm:space-y-4">
+        <div className="rounded-xl sm:rounded-2xl bg-zinc-900/70 border border-zinc-800 p-3 sm:p-4">
+          <h3 className="text-base sm:text-lg font-semibold mb-3 sm:mb-4">Game Stats</h3>
+          <div className="space-y-2 sm:space-y-3 text-xs sm:text-sm">
+            <div className="flex justify-between items-center">
               <span className="text-zinc-400">Balance:</span>
-              <span className="text-purple-400 text-xl font-bold">{balance.toFixed(2)} SOL</span>
+              <span className="text-purple-400 text-base sm:text-lg md:text-xl font-bold">{balance.toFixed(2)} SOL</span>
             </div>
-            <div className="flex justify-between">
+            <div className="flex justify-between items-center">
               <span className="text-zinc-400">Last Crash:</span>
-              <span className="text-red-400 font-mono">
+              <span className="text-red-400 font-mono text-xs sm:text-sm">
                 {lastCrashMultiplier ? `${lastCrashMultiplier.toFixed(2)}×` : 'N/A'}
               </span>
             </div>
-            <div className="flex justify-between">
+            <div className="flex justify-between items-center">
               <span className="text-zinc-400">Total Rounds:</span>
-              <span className="text-white font-mono">{rounds.toLocaleString()}</span>
+              <span className="text-white font-mono text-xs sm:text-sm">{rounds.toLocaleString()}</span>
             </div>
-            <div className="flex justify-between">
+            <div className="flex justify-between items-center">
               <span className="text-zinc-400">House Profit:</span>
-              <span className="text-purple-400 font-mono">{houseProfit.toFixed(2)} SOL</span>
+              <span className="text-purple-400 font-mono text-xs sm:text-sm">{houseProfit.toFixed(2)} SOL</span>
             </div>
           </div>
         </div>
 
-        <div className="rounded-2xl bg-zinc-900/70 border border-zinc-800 p-4">
-          <h3 className="text-lg font-semibold mb-4">Provably Fair</h3>
-          <div className="space-y-2 text-sm">
+        <div className="rounded-xl sm:rounded-2xl bg-zinc-900/70 border border-zinc-800 p-3 sm:p-4">
+          <h3 className="text-base sm:text-lg font-semibold mb-3 sm:mb-4">Provably Fair</h3>
+          <div className="space-y-2 text-xs sm:text-sm">
             <div>
               <span className="text-zinc-400 block">Server Seed Hash:</span>
-              <span className="text-white font-mono text-xs break-all">{serverSeedHash || 'Loading...'}</span>
+              <span className="text-white font-mono text-[10px] sm:text-xs break-all">{serverSeedHash || 'Loading...'}</span>
             </div>
-            <div className="text-xs text-zinc-500 mt-2">Your ID: #{userId ?? '...'}</div>
+            <div className="text-[10px] sm:text-xs text-zinc-500 mt-2">Your ID: #{userId ?? '...'}</div>
           </div>
         </div>
 
