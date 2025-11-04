@@ -328,7 +328,7 @@ app.prepare().then(() => {
           crashNsp.emit('_x', { _t: gameState.targetCrash });
           
           crashNsp.emit('round_update', gameState);
-        }, 3000);
+        }, 5000);
       }
     }
   }, 100);
