@@ -1,0 +1,36 @@
+services:
+  app:
+    image: soldegen-app:local
+    build:
+      context: .
+      dockerfile: Dockerfile
+      # Build args needed by Next.js at build time
+      args:
+        NEXT_PUBLIC_SUPABASE_URL: ${NEXT_PUBLIC_SUPABASE_URL}
+        NEXT_PUBLIC_SUPABASE_ANON_KEY: ${NEXT_PUBLIC_SUPABASE_ANON_KEY}
+        NEXT_PUBLIC_API_BASE: /
+        NEXT_PUBLIC_PHYSICS_SERVER_URL: /physics
+        NEXT_PUBLIC_SOLANA_NETWORK: ${NEXT_PUBLIC_SOLANA_NETWORK}
+        NEXT_PUBLIC_SOLANA_RPC_URL: ${NEXT_PUBLIC_SOLANA_RPC_URL}
+    # Runtime envs (pulled from .env.local)
+    env_file:
+      - .env.local
+    environment:
+      NODE_ENV: production
+      PORT: 3000
+      PYTHON_BIN: python3
+      # Optional: override Python host/port if you changed them
+      # PY_HOST: 0.0.0.0
+      # PY_PORT: 8000
+      # CORS_ORIGINS: "*"
+    ports:
+      - "3000:3000"
+    restart: unless-stopped
+    healthcheck:
+      test: >
+        CMD-SHELL node -e "require('http').get('http://localhost:3000/health',
+        r=>process.exit(r.statusCode===200?0:1)).on('error',()=>process.exit(1))"
+      interval: 10s
+      timeout: 5s
+      retries: 6
+      start_period: 20s
