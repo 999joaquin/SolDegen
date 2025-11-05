@@ -4,11 +4,8 @@ import { useState, useEffect, useMemo } from 'react';
 import { crashSocket } from '@/lib/crashSocket';
 import { getCrashFair, getCrashStats, getCrashHistoryDedup, getCrashRoundDetail } from '@/lib/crashApi';
 import CrashChat from '@/components/CrashChat';
-<<<<<<< HEAD
 import Rocket from '@/components/Rocket';
-=======
 import { updateLeaderboard } from '@/lib/leaderboardApi';
->>>>>>> 3432e0c7e27eaa63d12a56b4e51589e414fadabf
 
 type CrashState = 'IDLE' | 'COUNTDOWN' | 'RUNNING';
 type Chip = { multiplier: number; count: number; rounds: string[]; losers: { userId:number; bet:number }[] };
