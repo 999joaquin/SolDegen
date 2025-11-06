@@ -20,9 +20,17 @@ export function useSolanaBalance(address: string | null, refreshMs = 15000) {
       setBalance(null);
       return;
     }
-    const pubkey = new PublicKey(address);
-    const lamports = await connection.getBalance(pubkey);
-    setBalance(lamports / 1_000_000_000);
+    try {
+      console.log('🔍 Fetching balance for address:', address);
+      const pubkey = new PublicKey(address);
+      const lamports = await connection.getBalance(pubkey);
+      const sol = lamports / 1_000_000_000;
+      console.log('💎 Balance fetched:', sol, 'SOL');
+      setBalance(sol);
+    } catch (error) {
+      console.error('❌ Error fetching balance:', error);
+      setBalance(null);
+    }
   }, [address, connection]);
 
   React.useEffect(() => {

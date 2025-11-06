@@ -108,8 +108,10 @@ export default function PlinkoPage() {
 
   // Update balance setiap kali Solana balance berubah
   useEffect(() => {
+    console.log('💰 Solana balance updated:', solanaBalance);
     if (solanaBalance !== null) {
       setBalance(solanaBalance);
+      console.log('✅ Balance set to:', solanaBalance);
     }
   }, [solanaBalance]);
 
@@ -136,10 +138,9 @@ export default function PlinkoPage() {
     const loadInitialData = async () => {
       try {
         const [fairData, statsData] = await Promise.all([getFair(), getStats()]);
-        // Gunakan balance dari Solana wallet, bukan dari API demo
-        setBalance(solanaBalance || 0);
         setHouseProfit(statsData.houseProfit);
         setServerSeedHash(fairData.serverSeedHash);
+        // Balance akan di-update dari useEffect yang tracking solanaBalance
       } catch (error) {
         console.error('Failed to load initial data:', error);
       }
@@ -258,7 +259,7 @@ export default function PlinkoPage() {
       // Refresh Solana balance dari wallet
       await refreshSolanaBalance();
       const statsData = await getStats();
-      setBalance(solanaBalance || 0);
+      // Balance akan di-update otomatis oleh useEffect yang watch solanaBalance
       setHouseProfit(statsData.houseProfit);
     } catch (error) {
       console.error('Failed to refresh balance and stats:', error);
