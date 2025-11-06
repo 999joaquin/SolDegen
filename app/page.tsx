@@ -60,7 +60,7 @@ export default function ComingSoonPage() {
         <img
           src="/logo.png"
           alt="Slinko Logo"
-          className="h-24 md:h-32 mx-auto mb-6 animate-pulse-subtle"
+          className="h-60 md:h-60 mx-auto mb-6 animate-pulse-subtle"
         />
         <h1 className="text-3xl md:text-4xl font-bold text-purple-200 mb-3">Launching Soon</h1>
         <p className="text-purple-300 mb-8">
