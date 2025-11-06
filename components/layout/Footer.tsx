@@ -29,8 +29,8 @@ export function Footer() {
               />
             </div>
             <p className="text-gray-300 mb-6">
-              SolDegen is a cutting-edge Solana-based gambling platform that offers provably fair games and lightning-fast transactions.
-              Experience the thrill of Crash and Plinko with complete transparency and security.
+              Slinko is a cutting-edge Solana-based gaming platform offering provably fair Plinko with lightning-fast transactions.
+              Experience the thrill of Plinko with complete transparency and security.
             </p>
             <div className="flex space-x-4">
               <a 
@@ -115,7 +115,7 @@ export function Footer() {
               <h4 className="text-lg font-semibold text-gray-200">Provably Fair</h4>
             </div>
             <p className="text-gray-300 text-sm mb-4">
-              Our provably fair system uses a combination of server seed, client seed, and nonce to ensure that every game is 100% random and verifiable.
+              Our provably fair system uses a combination of server seed, client seed, and nonce to ensure every Plinko drop is 100% random and verifiable.
             </p>
             <div className="text-xs text-gray-400">
               <span className="font-semibold">Server Seed:</span> 7a4b...e8c2
@@ -127,7 +127,7 @@ export function Footer() {
           </div>
           
           <div className="text-center">
-            <p className="text-gray-400 text-sm">© 2024 SolDegen. All rights reserved.</p>
+            <p className="text-gray-400 text-sm">© 2025 Slinko. All rights reserved.</p>
           </div>
         </div>
       </div>

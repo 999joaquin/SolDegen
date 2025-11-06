@@ -2,12 +2,9 @@
 
 import { useState, useEffect } from 'react';
 import { socket as plinkoSocket } from '@/lib/socket';
-import { crashSocket } from '@/lib/crashSocket';
-import { Trophy, TrendingUp, TrendingDown, Minus } from 'lucide-react';
+import { Trophy, TrendingUp, TrendingDown } from 'lucide-react';
 
-type GameType = 'plinko' | 'crash' | 'all';
-
-interface LeaderboardEntry {
+type LeaderboardEntry = {
   userId: number;
   username: string;
   totalWagered: number;
@@ -17,43 +14,36 @@ interface LeaderboardEntry {
   winRate: number;
   rank: number;
   previousRank?: number;
-}
+};
 
 export default function LeaderboardPage() {
-  const [gameType, setGameType] = useState<GameType>('all');
   const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([]);
   const [loading, setLoading] = useState(true);
   const [timeFrame, setTimeFrame] = useState<'daily' | 'weekly' | 'allTime'>('allTime');
 
   useEffect(() => {
     loadLeaderboard();
-    
-    // Listen for real-time updates
+
     const handleLeaderboardUpdate = (data: any) => {
-      console.log('📊 Leaderboard update received:', data);
-      if (data.gameType === gameType || gameType === 'all') {
-        updateLeaderboard(data.entry);
-      }
+      // Plinko-only updates
+      updateLeaderboardLocal(data.entry);
     };
 
     plinkoSocket.on('leaderboard_update', handleLeaderboardUpdate);
-    crashSocket.on('leaderboard_update', handleLeaderboardUpdate);
 
-    // Refresh every 10 seconds
     const interval = setInterval(() => {
       loadLeaderboard();
     }, 10000);
 
     return () => {
       plinkoSocket.off('leaderboard_update', handleLeaderboardUpdate);
-      crashSocket.off('leaderboard_update', handleLeaderboardUpdate);
       clearInterval(interval);
     };
-  }, [gameType, timeFrame]);
+  }, [timeFrame]);
 
   const loadLeaderboard = async () => {
     try {
-      const response = await fetch(`/api/leaderboard?game=${gameType}&timeframe=${timeFrame}`);
+      const response = await fetch(`/api/leaderboard?timeframe=${timeFrame}`);
       if (response.ok) {
         const data = await response.json();
         setLeaderboard(data);
@@ -65,24 +55,20 @@ export default function LeaderboardPage() {
     }
   };
 
-  const updateLeaderboard = (entry: LeaderboardEntry) => {
+  const updateLeaderboardLocal = (entry: LeaderboardEntry) => {
     setLeaderboard(prev => {
-      // Find if entry exists
       const existingIndex = prev.findIndex(e => e.userId === entry.userId);
       let newList = [...prev];
-      
+
       if (existingIndex >= 0) {
-        // Store previous rank
         entry.previousRank = prev[existingIndex].rank;
         newList[existingIndex] = entry;
       } else {
         newList.push(entry);
       }
-      
-      // Re-sort and update ranks
+
       newList.sort((a, b) => b.totalProfit - a.totalProfit);
       newList = newList.slice(0, 50).map((e, i) => ({ ...e, rank: i + 1 }));
-      
       return newList;
     });
   };
@@ -131,42 +117,6 @@ export default function LeaderboardPage() {
 
         {/* Filters */}
         <div className="grid grid-cols-2 gap-4 mb-6">
-          <div className="space-y-2">
-            <label className="text-zinc-400 text-xs sm:text-sm">Game Type</label>
-            <div className="flex gap-2">
-              <button
-                onClick={() => setGameType('all')}
-                className={`flex-1 py-2 px-3 sm:px-4 rounded-lg font-medium transition-colors text-xs sm:text-sm ${
-                  gameType === 'all'
-                    ? 'bg-purple-500 text-white'
-                    : 'bg-zinc-800 text-zinc-400 hover:bg-zinc-700'
-                }`}
-              >
-                All Games
-              </button>
-              <button
-                onClick={() => setGameType('plinko')}
-                className={`flex-1 py-2 px-3 sm:px-4 rounded-lg font-medium transition-colors text-xs sm:text-sm ${
-                  gameType === 'plinko'
-                    ? 'bg-purple-500 text-white'
-                    : 'bg-zinc-800 text-zinc-400 hover:bg-zinc-700'
-                }`}
-              >
-                Plinko
-              </button>
-              <button
-                onClick={() => setGameType('crash')}
-                className={`flex-1 py-2 px-3 sm:px-4 rounded-lg font-medium transition-colors text-xs sm:text-sm ${
-                  gameType === 'crash'
-                    ? 'bg-purple-500 text-white'
-                    : 'bg-zinc-800 text-zinc-400 hover:bg-zinc-700'
-                }`}
-              >
-                Crash
-              </button>
-            </div>
-          </div>
-
           <div className="space-y-2">
             <label className="text-zinc-400 text-xs sm:text-sm">Time Frame</label>
             <div className="flex gap-2">

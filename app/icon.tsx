@@ -21,7 +21,7 @@ export default function Icon() {
           letterSpacing: 0.5,
         }}
       >
-        SD
+        SL
       </div>
     ),
     { ...size }

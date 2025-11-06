@@ -3,18 +3,15 @@
 
 console.log('🔍 Testing Backend Connection...');
 
-// Test REST API
-const API_BASE = 'http://localhost:3000';
+const API_BASE = window.location.origin;
 
 async function testRestAPI() {
   console.log('\n📡 Testing REST API Endpoints...');
   
   const endpoints = [
-    '/crash/fair',
-    '/crash/stats',
-    '/crash/balance/123456',
-    '/crash/history/dedup?limit=5',
-    '/crash/history?limit=5'
+    '/api/fair/current',
+    '/api/demo/stats',
+    '/api/leaderboard'
   ];
   
   for (const endpoint of endpoints) {
@@ -32,27 +29,23 @@ async function testRestAPI() {
   }
 }
 
-// Test WebSocket
 function testWebSocket() {
-  console.log('\n🔌 Testing WebSocket Connection...');
+  console.log('\n🔌 Testing Plinko WebSocket Connection...');
   
-  // Test if socket.io-client is available
   if (typeof io === 'undefined') {
     console.error('❌ socket.io-client not loaded');
     return;
   }
   
-  const socket = io(`${API_BASE}/crash`, {
+  const socket = io(`${API_BASE}/plinko`, {
     path: '/socket.io',
-    transports: ['websocket', 'polling']
+    transports: ['polling', 'websocket']
   });
   
   socket.on('connect', () => {
     console.log('✅ WebSocket connected!');
     console.log('Socket ID:', socket.id);
-    
-    // Test emit
-    socket.emit('get_chat_history');
+    socket.emit('join_round', { userId: Math.floor(Math.random() * 100000), bet: 1 });
   });
   
   socket.on('disconnect', () => {
@@ -67,18 +60,19 @@ function testWebSocket() {
     console.log('📦 round_update:', data);
   });
   
-  socket.on('chat_history', (data) => {
-    console.log('💬 chat_history:', data);
+  socket.on('round_started', (data) => {
+    console.log('🏁 round_started:', data);
   });
   
-  // Close connection after 10 seconds
-  setTimeout(() => {
-    console.log('⏱️ Closing test connection...');
-    socket.close();
-  }, 10000);
+  socket.on('round_finished', () => {
+    console.log('✅ round_finished');
+    setTimeout(() => {
+      console.log('⏱️ Closing test connection...');
+      socket.close();
+    }, 3000);
+  });
 }
 
-// Run tests
 (async () => {
   await testRestAPI();
   testWebSocket();

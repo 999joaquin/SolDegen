@@ -48,7 +48,7 @@ export default function ComingSoonPage() {
         }`
       );
     } else {
-      showSuccess(`Thanks! We'll notify you at ${email} when SolDrop launches.`);
+      showSuccess(`Thanks! We'll notify you at ${email} when Slinko launches.`);
     }
 
     form.reset({ email: "" });
@@ -59,7 +59,7 @@ export default function ComingSoonPage() {
       <section className="w-full max-w-xl text-center">
         <img
           src="/logo.png"
-          alt="SolDrop Logo"
+          alt="Slinko Logo"
           className="h-24 md:h-32 mx-auto mb-6 animate-pulse-subtle"
         />
         <h1 className="text-3xl md:text-4xl font-bold text-purple-200 mb-3">Launching Soon</h1>

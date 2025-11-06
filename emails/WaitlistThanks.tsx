@@ -65,7 +65,7 @@ const WaitlistThanks: React.FC<Props> = ({
                         borderTopRightRadius: 12,
                       }}
                     >
-                      SolDegen
+                      Slinko
                     </td>
                   </tr>
 
@@ -97,9 +97,9 @@ const WaitlistThanks: React.FC<Props> = ({
                           color: "#334155",
                         }}
                       >
-                        Thanks for signing up! You're officially on the SolDegen
+                        Thanks for signing up! You're officially on the Slinko
                         waitlist. We'll keep you posted with updates and early
-                        access to Crash and Plinko.
+                        access to Plinko.
                       </p>
 
                       <p

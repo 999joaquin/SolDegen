@@ -30,14 +30,14 @@ export async function POST(req: Request) {
       );
     }
 
-    const subject = "You're on the SolDegen waitlist 🎉";
+    const subject = "You're on the Slinko waitlist 🎉";
     const resend = new Resend(apiKey);
 
     // Build an absolute logo URL if possible (requires NEXT_PUBLIC_APP_URL)
     const appUrl = process.env.NEXT_PUBLIC_APP_URL;
     const logoUrl = appUrl ? `${appUrl.replace(/\/$/, "")}/logo.png` : null;
     const logoImg = logoUrl
-      ? `<img src="${logoUrl}" alt="SolDegen" width="120" height="120" style="display:block;border:0;outline:none;text-decoration:none;margin:0 auto 12px;border-radius:16px" />`
+      ? `<img src="${logoUrl}" alt="Slinko" width="120" height="120" style="display:block;border:0;outline:none;text-decoration:none;margin:0 auto 12px;border-radius:16px" />`
       : "";
 
     // Branded HTML with grid background
@@ -71,7 +71,7 @@ export async function POST(req: Request) {
                     border-top-right-radius: 16px;
                   ">
                     ${logoImg}
-                    SolDegen
+                    Slinko
                   </td>
                 </tr>
                 <tr>
@@ -91,7 +91,7 @@ export async function POST(req: Request) {
                   ">
                     <h2 style="margin:0 0 12px;font-size:20px;line-height:1.3;color:#0f172a">You're on the waitlist 🎉</h2>
                     <p style="margin:0 0 12px;font-size:16px;color:#334155">
-                      Thanks for signing up! You're officially on the SolDegen waitlist. We'll keep you posted with updates and early access to Crash and Plinko.
+                      Thanks for signing up! You're officially on the Slinko waitlist. We'll keep you posted with updates and early access to Plinko.
                     </p>
                     <p style="margin:0 0 12px;font-size:16px;color:#334155">
                       In the meantime, stay tuned—degen times ahead.

@@ -63,17 +63,7 @@ function stopPythonBackend() {
 }
 
 // ------------ Mock game state (Crash)
-let gameState = {
-  state: 'COUNTDOWN',
-  players: 0,
-  multiplier: 1.0,
-  timeLeftMs: 5000,
-  targetCrash: 0,
-};
-
 // In-memory chat
-const chatMessages = [];
-
 // ------------ Plinko state
 const plinkoMultipliers = [
   0.2, 0.35, 0.55, 0.9, 1.1, 0.95, 1.25, 1.55, 2.0, 1.55, 1.25, 0.95, 1.1, 0.9, 0.55, 0.35, 0.2,
@@ -145,71 +135,12 @@ app
         credentials: true
       },
       allowEIO3: true,
-      // Optimize for polling transport (AWS App Runner compatibility)
       pingTimeout: 60000,
       pingInterval: 25000,
       upgradeTimeout: 30000,
-      // Allow polling to work reliably
       transports: ['polling', 'websocket'],
-      // Enable for multiplayer
       allowUpgrades: true,
       cookie: false
-    });
-
-    // ---- Crash namespace
-    const crashNsp = io.of('/crash');
-
-    crashNsp.on('connection', (socket) => {
-      console.log('✅ Client connected to /crash:', socket.id);
-
-      // Send current round snapshot
-      socket.emit('round_update', gameState);
-
-      socket.on('join_round', (data) => {
-        console.log('📥 Crash join:', data);
-
-        if (gameState.players === 0 && gameState.state === 'COUNTDOWN') {
-          const rand = Math.random();
-          // ~65% quick crash between 1.0–2.0x, else 2.0–10.0x
-          gameState.targetCrash = rand < 0.65 ? 1.0 + Math.random() * 1.0 : 2.0 + Math.random() * 8.0;
-          crashNsp.emit('_x', { _t: gameState.targetCrash });
-        }
-
-        gameState.players++;
-        socket.emit('joined');
-        crashNsp.emit('round_update', gameState);
-      });
-
-      socket.on('cashout', (data) => {
-        console.log('💰 Crash cashout:', data);
-        socket.emit('cashed_out', {
-          userId: data.userId,
-          atMultiplier: gameState.multiplier,
-          payout: data.bet * gameState.multiplier,
-          atMs: Date.now(),
-        });
-      });
-
-      socket.on('get_chat_history', () => {
-        socket.emit('chat_history', chatMessages);
-      });
-
-      socket.on('send_chat_message', (data) => {
-        const msg = {
-          id: Math.random().toString(36).slice(2),
-          userId: data.userId,
-          username: data.username,
-          message: data.message,
-          timestamp: Date.now(),
-        };
-        chatMessages.push(msg);
-        if (chatMessages.length > 100) chatMessages.shift();
-        crashNsp.emit('chat_message', msg);
-      });
-
-      socket.on('disconnect', () => {
-        console.log('❌ Client disconnected from /crash:', socket.id);
-      });
     });
 
     // ---- Plinko namespace
@@ -354,53 +285,6 @@ app
       }
     }, 100);
 
-    // ------------ Crash game loop
-    setInterval(() => {
-      if (gameState.state === 'COUNTDOWN' && gameState.players > 0) {
-        gameState.timeLeftMs -= 100;
-        if (gameState.timeLeftMs <= 0) {
-          gameState.state = 'RUNNING';
-          gameState.multiplier = 1.0;
-
-          if (!gameState.targetCrash) {
-            const rand = Math.random();
-            gameState.targetCrash = rand < 0.65 ? 1.0 + Math.random() * 1.0 : 2.0 + Math.random() * 8.0;
-          }
-
-          crashNsp.emit('round_started', { _t: gameState.targetCrash });
-        }
-        crashNsp.emit('round_update', gameState);
-      } else if (gameState.state === 'RUNNING') {
-        // Tick multiplier
-        gameState.multiplier = parseFloat((gameState.multiplier + 0.01).toFixed(2));
-        crashNsp.emit('round_update', gameState);
-
-        if (gameState.multiplier >= gameState.targetCrash) {
-          crashNsp.emit('crashed', { crashMultiplier: gameState.multiplier });
-          crashNsp.emit('round_finished');
-
-          // Reset and schedule next countdown
-          gameState = {
-            state: 'IDLE',
-            players: 0,
-            multiplier: 1.0,
-            timeLeftMs: 0,
-            targetCrash: 0,
-          };
-
-          setTimeout(() => {
-            gameState.state = 'COUNTDOWN';
-            gameState.timeLeftMs = 5000;
-
-            const rand = Math.random();
-            gameState.targetCrash = rand < 0.65 ? 1.0 + Math.random() * 1.0 : 2.0 + Math.random() * 8.0;
-            crashNsp.emit('_x', { _t: gameState.targetCrash });
-            crashNsp.emit('round_update', gameState);
-          }, 5000);
-        }
-      }
-    }, 100);
-
     // ------------ Start HTTP server
     httpServer
       .once('error', (err) => {
@@ -409,7 +293,6 @@ app
       })
       .listen(port, '0.0.0.0', () => {
         console.log(`\n🚀 Server ready on 0.0.0.0:${port}`);
-        console.log('🎮 Crash namespace: /crash');
         console.log('🎲 Plinko namespace: /plinko');
 
         // Start Python backend after Node server is listening

@@ -49,13 +49,6 @@ const Header = () => {
           </Link>
 
           <nav className="hidden lg:flex items-center space-x-4 xl:space-x-6">
-            <Link href="/crash" aria-label="Crash" className="group">
-              <img
-                src="/crash-logo.png"
-                alt="Crash"
-                className="h-10 lg:h-12 xl:h-14 w-auto opacity-80 transition-all duration-200 group-hover:opacity-100 group-hover:scale-105"
-              />
-            </Link>
             <Link href="/plinko" aria-label="Plinko" className="group">
               <img
                 src="/plinko-logo.png"
@@ -149,9 +142,6 @@ const Header = () => {
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-40 sm:w-44 bg-black/90 border-purple-700/40">
-              <DropdownMenuItem asChild className="text-purple-300 focus:bg-purple-700/40 focus:text-purple-100 text-sm">
-                <Link href="/crash">Crash</Link>
-              </DropdownMenuItem>
               <DropdownMenuItem asChild className="text-purple-300 focus:bg-purple-700/40 focus:text-purple-100 text-sm">
                 <Link href="/plinko">Plinko</Link>
               </DropdownMenuItem>
