@@ -14,6 +14,8 @@ const GridBackground = () => {
             linear-gradient(90deg, rgba(147, 51, 234, 0.15) 1px, transparent 1px)
           `,
           backgroundSize: "120px 120px",
+          backgroundPosition: "0px 0px",
+          willChange: "background-position",
           animation: "gridDrift 45s linear infinite",
         }}
       />
@@ -25,6 +27,8 @@ const GridBackground = () => {
             linear-gradient(90deg, rgba(168, 85, 247, 0.25) 1px, transparent 1px)
           `,
           backgroundSize: "60px 60px",
+          backgroundPosition: "0px 0px",
+          willChange: "background-position",
           animation: "gridDrift 30s linear infinite reverse",
         }}
       />
@@ -36,6 +40,8 @@ const GridBackground = () => {
             linear-gradient(90deg, rgba(196, 132, 253, 0.35) 1px, transparent 1px)
           `,
           backgroundSize: "30px 30px",
+          backgroundPosition: "0px 0px",
+          willChange: "background-position",
           animation: "gridDrift 20s linear infinite",
         }}
       />
@@ -78,10 +84,13 @@ const GridBackground = () => {
         })}
       </div>
       <style>{`
+        /* Updated for seamless looping: move the repeating background by multiples of its size */
         @keyframes gridDrift {
-          0% { transform: translate(0, 0) scale(1); }
-          100% { transform: translate(60px, 60px) scale(1.02); }
+          0% { background-position: 0px 0px; }
+          100% { background-position: 120px 120px; }
         }
+        /* REMOVED transform-based gridDrift to avoid visible reset snap */
+
         @keyframes floatOrb {
           0% { transform: translateY(0) scale(1); }
           100% { transform: translateY(-30px) scale(1.08); }
