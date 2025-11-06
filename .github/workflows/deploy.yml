@@ -1,0 +1,63 @@
+name: Deploy to App Runner (ECR image)
+
+on:
+  push:
+    branches: [ main ]   # change if your default branch is different
+  workflow_dispatch:      # allow manual runs
+
+env:
+  AWS_REGION: ${{ secrets.AWS_REGION }}
+  AWS_ACCOUNT_ID: ${{ secrets.AWS_ACCOUNT_ID }}
+  ECR_REPOSITORY: ${{ secrets.ECR_REPOSITORY }}           # e.g. "soldegen"
+  ECR_REGISTRY: ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com
+  IMAGE_TAG: ${{ github.sha }}
+  APP_RUNNER_SERVICE_ARN: ${{ secrets.APP_RUNNER_SERVICE_ARN }}
+  CONTAINER_PORT: "3000"
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write     # for OIDC
+      contents: read
+
+    steps:
+      - name: Checkout
+      - uses: actions/checkout@v4
+
+      - name: Configure AWS credentials (OIDC)
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_TO_ASSUME }}   # IAM role ARN you create for GitHub OIDC
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Login to Amazon ECR
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Build & Push Docker image to ECR
+        run: |
+          set -e
+          IMAGE_URI="${ECR_REGISTRY}/${ECR_REPOSITORY}"
+
+          # Build with Next.js build args so prerendering doesn’t fail
+          docker build \
+            --build-arg NEXT_PUBLIC_SUPABASE_URL="${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}" \
+            --build-arg NEXT_PUBLIC_SUPABASE_ANON_KEY="${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}" \
+            --build-arg NEXT_PUBLIC_API_BASE="${{ secrets.NEXT_PUBLIC_API_BASE }}" \
+            --build-arg NEXT_PUBLIC_PHYSICS_SERVER_URL="${{ secrets.NEXT_PUBLIC_PHYSICS_SERVER_URL }}" \
+            --build-arg NEXT_PUBLIC_SOLANA_NETWORK="${{ secrets.NEXT_PUBLIC_SOLANA_NETWORK }}" \
+            --build-arg NEXT_PUBLIC_SOLANA_RPC_URL="${{ secrets.NEXT_PUBLIC_SOLANA_RPC_URL }}" \
+            -t "${IMAGE_URI}:${IMAGE_TAG}" \
+            -t "${IMAGE_URI}:latest" \
+            .
+
+          docker push "${IMAGE_URI}:${IMAGE_TAG}"
+          docker push "${IMAGE_URI}:latest"
+
+      - name: Trigger App Runner to use latest image
+        run: |
+          aws apprunner update-service \
+            --service-arn "${APP_RUNNER_SERVICE_ARN}" \
+            --source-configuration \
+              ImageRepository="{ImageIdentifier=${ECR_REGISTRY}/${ECR_REPOSITORY}:latest,ImageRepositoryType=ECR,ImageConfiguration={Port=${CONTAINER_PORT}}}" \
+            --auto-deployments-enabled
