@@ -1,79 +1,62 @@
-name: Deploy to App Runner
+name: Build & Deploy to App Runner
 
 on:
   push:
-    branches: [ main ]
+    branches: [ "main" ]
   workflow_dispatch:
 
 permissions:
-  id-token: write
-  contents: read
-
-concurrency:
-  group: apprunner-deploy
-  cancel-in-progress: true
+  contents: read            # checkout code
+  id-token: write           # OIDC -> assume role
 
 env:
-  AWS_REGION: ${{ secrets.AWS_REGION }}                         # e.g. us-east-1
-  AWS_ACCOUNT_ID: ${{ secrets.AWS_ACCOUNT_ID }}                 # e.g. 485813993212
-  ECR_REPOSITORY: ${{ secrets.ECR_REPOSITORY }}                 # e.g. soldegen
-  APP_RUNNER_SERVICE_ARN: ${{ secrets.APP_RUNNER_SERVICE_ARN }} # arn:aws:apprunner:...:service/...
-
-  # Next.js build-time public vars (must exist as repo secrets/variables)
-  NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
-  NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
-  NEXT_PUBLIC_API_BASE: ${{ secrets.NEXT_PUBLIC_API_BASE }}
-  NEXT_PUBLIC_PHYSICS_SERVER_URL: ${{ secrets.NEXT_PUBLIC_PHYSICS_SERVER_URL }}
-  NEXT_PUBLIC_SOLANA_NETWORK: ${{ secrets.NEXT_PUBLIC_SOLANA_NETWORK }}
-  NEXT_PUBLIC_SOLANA_RPC_URL: ${{ secrets.NEXT_PUBLIC_SOLANA_RPC_URL }}
+  AWS_REGION: ${{ secrets.AWS_REGION }}
+  AWS_ACCOUNT_ID: ${{ secrets.AWS_ACCOUNT_ID }}
+  ECR_REPOSITORY: ${{ secrets.ECR_REPOSITORY }}   # e.g. soldegen
+  APP_RUNNER_SERVICE_ARN: ${{ secrets.APP_RUNNER_SERVICE_ARN }}
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
+
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Configure AWS credentials (OIDC)
+      # ---- Assume your AWS role via OIDC ----
+      - name: Configure AWS credentials (assume role via OIDC)
         uses: aws-actions/configure-aws-credentials@v4
         with:
-          role-to-assume: ${{ secrets.AWS_ROLE_TO_ASSUME }}     # arn:aws:iam::<acct>:role/<github-oidc-role>
-          role-session-name: github-actions-soldegen
+          role-to-assume: ${{ secrets.AWS_ROLE_TO_ASSUME }}
           aws-region: ${{ env.AWS_REGION }}
+          audience: sts.amazonaws.com
+          output-credentials: true
 
-      - name: Compute ECR URI
-        id: vars
-        run: echo "ECR_URI=${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com/${ECR_REPOSITORY}" >> $GITHUB_OUTPUT
+      # ---- Log in to ECR ----
+      - name: Login to Amazon ECR
+        id: ecr
+        uses: aws-actions/amazon-ecr-login@v2
 
-      - name: Login to ECR
-        run: |
-          aws ecr get-login-password --region "${AWS_REGION}" \
-            | docker login --username AWS --password-stdin "${{ steps.vars.outputs.ECR_URI }}"
+      # ---- (Optional) enable Buildx so cache works nicely ----
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
 
+      # ---- Build & push image ----
       - name: Build and push image
-        uses: docker/build-push-action@v5
+        uses: docker/build-push-action@v6
         with:
           context: .
           push: true
-          tags: ${{ steps.vars.outputs.ECR_URI }}:latest
+          tags: ${{ steps.ecr.outputs.registry }}/${{ env.ECR_REPOSITORY }}:latest
           build-args: |
-            NEXT_PUBLIC_SUPABASE_URL=${{ env.NEXT_PUBLIC_SUPABASE_URL }}
-            NEXT_PUBLIC_SUPABASE_ANON_KEY=${{ env.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
-            NEXT_PUBLIC_API_BASE=${{ env.NEXT_PUBLIC_API_BASE }}
-            NEXT_PUBLIC_PHYSICS_SERVER_URL=${{ env.NEXT_PUBLIC_PHYSICS_SERVER_URL }}
-            NEXT_PUBLIC_SOLANA_NETWORK=${{ env.NEXT_PUBLIC_SOLANA_NETWORK }}
-            NEXT_PUBLIC_SOLANA_RPC_URL=${{ env.NEXT_PUBLIC_SOLANA_RPC_URL }}
+            NEXT_PUBLIC_SUPABASE_URL=${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
+            NEXT_PUBLIC_SUPABASE_ANON_KEY=${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
+            NEXT_PUBLIC_API_BASE=${{ secrets.NEXT_PUBLIC_API_BASE }}
+            NEXT_PUBLIC_PHYSICS_SERVER_URL=${{ secrets.NEXT_PUBLIC_PHYSICS_SERVER_URL }}
+            NEXT_PUBLIC_SOLANA_NETWORK=${{ secrets.NEXT_PUBLIC_SOLANA_NETWORK }}
+            NEXT_PUBLIC_SOLANA_RPC_URL=${{ secrets.NEXT_PUBLIC_SOLANA_RPC_URL }}
 
-      - name: Ensure AWS CLI present
-        uses: aws-actions/setup-aws-cli@v4
-        with:
-          version: 2.x
-
-      - name: Point App Runner at :latest
+      # ---- Kick App Runner to deploy the new image (optional if you enabled auto-deploy from ECR) ----
+      - name: Trigger App Runner deployment
         run: |
-          aws apprunner update-service \
-            --service-arn "${APP_RUNNER_SERVICE_ARN}" \
-            --source-configuration "ImageRepository={ImageIdentifier=${{ steps.vars.outputs.ECR_URI }}:latest,ImageRepositoryType=ECR}"
-
-      - name: Start App Runner deployment
-        run: aws apprunner start-deployment --service-arn "${APP_RUNNER_SERVICE_ARN}"
+          aws apprunner start-deployment --service-arn "$APP_RUNNER_SERVICE_ARN"
