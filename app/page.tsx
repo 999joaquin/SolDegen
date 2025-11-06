@@ -71,24 +71,34 @@ export default function ComingSoonPage() {
       <GlowingDrops />
 
       <section className="relative z-10 flex min-h-screen items-center justify-center px-4 sm:px-6">
-        <div className="w-full max-w-2xl text-center animate-in fade-in-50 slide-in-from-bottom-4 duration-700">
+        <div className="w-full max-w-2xl text-center">
           <img
             src="/logo.png"
             alt="Slinko Logo"
-            className="h-44 md:h-56 mx-auto mb-6 animate-pulse-subtle"
+            className="h-44 md:h-56 mx-auto mb-6 animate-pulse-subtle opacity-0 animate-fade-in"
+            style={{ animationDelay: "120ms", animationDuration: "1.6s" }}
           />
 
-          <h1 className="text-4xl md:text-5xl font-bold mb-3">
+          <h1
+            className="text-4xl md:text-5xl font-bold mb-3 opacity-0 animate-fade-in"
+            style={{ animationDelay: "320ms", animationDuration: "1.7s" }}
+          >
             <span className="bg-gradient-to-r from-purple-300 via-fuchsia-400 to-purple-300 bg-clip-text text-transparent">
               Slinko is launching soon
             </span>
           </h1>
 
-          <p className="text-purple-200/90 mb-8 text-base md:text-lg">
+          <p
+            className="text-purple-200/90 mb-8 text-base md:text-lg opacity-0 animate-fade-in"
+            style={{ animationDelay: "520ms", animationDuration: "1.8s" }}
+          >
             Be first to play our provably fair Plinko on Solana—fast transactions, transparent outcomes, and pure fun.
           </p>
 
-          <div className="relative mx-auto rounded-2xl border border-purple-700/40 bg-black/40 backdrop-blur-md p-5 sm:p-6 shadow-xl shadow-purple-900/20 hover:shadow-purple-700/30 transition-shadow duration-300">
+          <div
+            className="relative mx-auto rounded-2xl border border-purple-700/40 bg-black/40 backdrop-blur-md p-5 sm:p-6 shadow-xl shadow-purple-900/20 hover:shadow-purple-700/30 transition-shadow duration-300 opacity-0 animate-fade-in"
+            style={{ animationDelay: "720ms", animationDuration: "2s" }}
+          >
             {/* subtle highlight */}
             <div className="pointer-events-none absolute -top-10 left-1/2 -translate-x-1/2 w-40 h-40 bg-purple-500/10 blur-2xl rounded-full"></div>
 
