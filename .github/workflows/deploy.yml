@@ -1,0 +1,64 @@
+name: Deploy to AWS App Runner (ECR image)
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+
+# Required for OIDC
+permissions:
+  id-token: write
+  contents: read
+
+env:
+  AWS_REGION: ${{ secrets.AWS_REGION }}
+  AWS_ACCOUNT_ID: ${{ secrets.AWS_ACCOUNT_ID }}
+  ECR_REPOSITORY: ${{ secrets.ECR_REPOSITORY }}
+  APP_RUNNER_SERVICE_ARN: ${{ secrets.APP_RUNNER_SERVICE_ARN }}
+
+jobs:
+  build_push_deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Configure AWS credentials (assume role via OIDC)
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_TO_ASSUME }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Login to Amazon ECR
+        id: ecr
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Compute image variables
+        id: vars
+        run: |
+          echo "ECR_URI=${{ steps.ecr.outputs.registry }}/${{ env.ECR_REPOSITORY }}" >> $GITHUB_OUTPUT
+          echo "IMAGE_TAG=${GITHUB_SHA::7}" >> $GITHUB_OUTPUT
+
+      - name: Build and push image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          push: true
+          tags: |
+            ${{ steps.vars.outputs.ECR_URI }}:${{ steps.vars.outputs.IMAGE_TAG }}
+            ${{ steps.vars.outputs.ECR_URI }}:latest
+          build-args: |
+            NEXT_PUBLIC_SUPABASE_URL=${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
+            NEXT_PUBLIC_SUPABASE_ANON_KEY=${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
+            NEXT_PUBLIC_API_BASE=/
+            NEXT_PUBLIC_PHYSICS_SERVER_URL=/physics
+            NEXT_PUBLIC_SOLANA_NETWORK=${{ secrets.NEXT_PUBLIC_SOLANA_NETWORK }}
+            NEXT_PUBLIC_SOLANA_RPC_URL=${{ secrets.NEXT_PUBLIC_SOLANA_RPC_URL }}
+
+      - name: Trigger App Runner deployment to :latest
+        run: |
+          aws apprunner update-service \
+            --service-arn "$APP_RUNNER_SERVICE_ARN" \
+            --source-configuration "ImageRepository={ImageIdentifier=${{ steps.vars.outputs.ECR_URI }}:latest,ImageRepositoryType=ECR}" \
+            --auto-deployments-enabled
