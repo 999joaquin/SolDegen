@@ -94,6 +94,25 @@
     pointer-events: none;
   }
 
+  /* Glowing drop balls */
+  .glow-drop-ball {
+    position: absolute;
+    top: -64px;
+    border-radius: 9999px;
+    background: radial-gradient(circle at 35% 35%, rgba(255,255,255,0.95) 0%, rgba(168,85,247,0.9) 40%, rgba(217,70,239,0.75) 65%, rgba(59,130,246,0.0) 72%);
+    box-shadow:
+      0 0 12px rgba(168,85,247,0.55),
+      0 0 28px rgba(217,70,239,0.35),
+      0 0 42px rgba(59,130,246,0.25);
+    filter: blur(0.15px);
+    will-change: transform, opacity;
+    animation-name: ball-drop, ball-glow-pulse;
+    animation-timing-function: linear, ease-in-out;
+    animation-iteration-count: infinite, infinite;
+    /* Duration for ball-glow-pulse stays fixed; ball-drop is set via inline style */
+    animation-duration: 7s, 2.4s;
+  }
+
   /* Rocket glow behind the ship */
   .rocket-glow {
     position: absolute;
@@ -305,4 +324,28 @@
   0% { background-position: 0 0; opacity: 0.28; }
   50% { background-position: -20px -2px; opacity: 0.4; }
   100% { background-position: -40px 0; opacity: 0.3; }
+}
+
+@keyframes ball-drop {
+  0% {
+    transform: translate3d(0, -10vh, 0);
+  }
+  100% {
+    transform: translate3d(0, 110vh, 0);
+  }
+}
+
+@keyframes ball-glow-pulse {
+  0%, 100% {
+    box-shadow:
+      0 0 10px rgba(168,85,247,0.45),
+      0 0 22px rgba(217,70,239,0.3),
+      0 0 32px rgba(59,130,246,0.2);
+  }
+  50% {
+    box-shadow:
+      0 0 16px rgba(168,85,247,0.75),
+      0 0 34px rgba(217,70,239,0.55),
+      0 0 52px rgba(59,130,246,0.4);
+  }
 }

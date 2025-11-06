@@ -9,6 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Form, FormField, FormItem, FormLabel, FormControl, FormDescription, FormMessage } from "@/components/ui/form";
 import { showError, showSuccess } from "@/utils/toast";
 import { joinWaitlist } from "@/lib/supabase-queries";
+import GlowingDrops from "@/components/landing/GlowingDrops";
 
 const schema = z.object({
   email: z.string().email("Please enter a valid email"),
@@ -62,6 +63,9 @@ export default function ComingSoonPage() {
         <div className="absolute top-1/3 -right-20 w-80 h-80 bg-fuchsia-600/20 rounded-full blur-3xl animate-pulse" style={{ animationDelay: "1s" }}></div>
         <div className="absolute bottom-0 left-1/4 w-64 h-64 bg-indigo-600/25 rounded-full blur-3xl animate-pulse" style={{ animationDelay: "2s" }}></div>
       </div>
+
+      {/* Glowing dropping balls */}
+      <GlowingDrops />
 
       <section className="relative z-10 flex min-h-screen items-center justify-center px-4 sm:px-6">
         <div className="w-full max-w-2xl text-center animate-in fade-in-50 slide-in-from-bottom-4 duration-700">
