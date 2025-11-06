@@ -13,39 +13,76 @@ export function useSolanaAirdrop() {
     return new Connection(ENV_RPC_URL, "confirmed");
   }, []);
 
-  // Fallback to the public devnet faucet only when we're on devnet
-  const fallbackConnection = React.useMemo(() => {
-    if (ENV_NETWORK !== "devnet") return null;
-    return new Connection(clusterApiUrl("devnet"), "confirmed");
-  }, []);
+  // New: build a list of candidate RPCs to try in order (devnet only)
+  const connections = React.useMemo(() => {
+    const candidates: Connection[] = [];
+    candidates.push(primaryConnection);
+
+    if (ENV_NETWORK === "devnet") {
+      // Solana public devnet
+      candidates.push(new Connection(clusterApiUrl("devnet"), "confirmed"));
+
+      // Public Ankr devnet RPC (no key required)
+      candidates.push(new Connection("https://rpc.ankr.com/solana_devnet", "confirmed"));
+
+      // Optional custom fallbacks via env (comma-separated URLs)
+      const extra = (process.env.NEXT_PUBLIC_SOLANA_FALLBACK_RPC_URLS as string) || "";
+      extra
+        .split(",")
+        .map((s) => s.trim())
+        .filter(Boolean)
+        .forEach((url) => {
+          candidates.push(new Connection(url, "confirmed"));
+        });
+    }
+
+    // Deduplicate by endpoint
+    const seen = new Set<string>();
+    return candidates.filter((c) => {
+      const key = (c as any)._rpcEndpoint || "";
+      if (seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    });
+  }, [primaryConnection]);
 
   const airdrop = React.useCallback(
     async (address: string, amountSol = 1): Promise<string> => {
       if (ENV_NETWORK !== "devnet") {
         throw new Error("Airdrop is only available on devnet.");
       }
+
       const pubkey = new PublicKey(address);
       const lamports = Math.floor(amountSol * LAMPORTS_PER_SOL);
 
-      try {
-        const sig = await primaryConnection.requestAirdrop(pubkey, lamports);
-        await primaryConnection.confirmTransaction(sig, "confirmed");
-        return sig;
-      } catch (err: any) {
-        const isRateLimited =
-          (typeof err?.code === "number" && err.code === -32403) ||
-          (typeof err?.message === "string" && err.message.toLowerCase().includes("rate limit"));
+      let lastErr: any = null;
 
-        if (isRateLimited && fallbackConnection) {
-          const sig = await fallbackConnection.requestAirdrop(pubkey, lamports);
-          await fallbackConnection.confirmTransaction(sig, "confirmed");
+      for (const conn of connections) {
+        try {
+          const sig = await conn.requestAirdrop(pubkey, lamports);
+          await conn.confirmTransaction(sig, "confirmed");
           return sig;
-        }
+        } catch (err: any) {
+          lastErr = err;
+          const message = String(err?.message ?? "").toLowerCase();
+          const code = err?.code;
 
-        throw err;
+          const isRateLimited =
+            code === -32403 ||
+            message.includes("429") ||
+            message.includes("too many requests") ||
+            message.includes("rate limit");
+
+          // Try next RPC on rate-limit; otherwise fail fast
+          if (!isRateLimited) {
+            throw err;
+          }
+        }
       }
+
+      throw lastErr ?? new Error("Airdrop failed due to rate limiting across all RPC endpoints.");
     },
-    [primaryConnection, fallbackConnection]
+    [connections]
   );
 
   return { airdrop };

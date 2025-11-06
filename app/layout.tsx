@@ -15,8 +15,8 @@ const exo2 = Exo_2({
 });
 
 export const metadata: Metadata = {
-  title: "SolDegen Next",
-  description: "Solana-based gambling platform (Next.js)"
+  title: "Slinko",
+  description: "Solana-based gambling platform"
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
