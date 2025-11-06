@@ -20,7 +20,11 @@ const drops: Drop[] = [
 
 export default function GlowingDrops() {
   return (
-    <div className="pointer-events-none absolute inset-0 overflow-hidden" aria-hidden="true">
+    <div
+      className="pointer-events-none absolute inset-0 overflow-hidden opacity-0 animate-fade-in"
+      aria-hidden="true"
+      style={{ animationDelay: "120ms" }}
+    >
       {drops.map((d, idx) => (
         <div
           key={idx}

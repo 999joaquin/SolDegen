@@ -58,7 +58,10 @@ export default function ComingSoonPage() {
   return (
     <div className="relative min-h-screen overflow-hidden">
       {/* Animated gradient orbs */}
-      <div className="pointer-events-none absolute inset-0">
+      <div
+        className="pointer-events-none absolute inset-0 opacity-0 animate-fade-in"
+        style={{ animationDelay: "60ms" }}
+      >
         <div className="absolute -top-10 -left-16 w-72 h-72 bg-purple-600/25 rounded-full blur-3xl animate-pulse"></div>
         <div className="absolute top-1/3 -right-20 w-80 h-80 bg-fuchsia-600/20 rounded-full blur-3xl animate-pulse" style={{ animationDelay: "1s" }}></div>
         <div className="absolute bottom-0 left-1/4 w-64 h-64 bg-indigo-600/25 rounded-full blur-3xl animate-pulse" style={{ animationDelay: "2s" }}></div>

@@ -113,6 +113,12 @@
     animation-duration: 7s, 2.4s;
   }
 
+  /* Smooth fade-in utility */
+  .animate-fade-in {
+    animation: fade-in-kf 800ms ease-out forwards;
+    will-change: opacity;
+  }
+
   /* Rocket glow behind the ship */
   .rocket-glow {
     position: absolute;
@@ -348,4 +354,10 @@
       0 0 34px rgba(217,70,239,0.55),
       0 0 52px rgba(59,130,246,0.4);
   }
+}
+
+/* New fade-in keyframes */
+@keyframes fade-in-kf {
+  from { opacity: 0; }
+  to { opacity: 1; }
 }
