@@ -139,8 +139,21 @@ app
     // ------------ Socket.IO (Node side)
     const io = new Server(httpServer, {
       path: '/socket.io',
-      cors: { origin: '*', methods: ['GET', 'POST'] },
+      cors: { 
+        origin: '*', 
+        methods: ['GET', 'POST'],
+        credentials: true
+      },
       allowEIO3: true,
+      // Optimize for polling transport (AWS App Runner compatibility)
+      pingTimeout: 60000,
+      pingInterval: 25000,
+      upgradeTimeout: 30000,
+      // Allow polling to work reliably
+      transports: ['polling', 'websocket'],
+      // Enable for multiplayer
+      allowUpgrades: true,
+      cookie: false
     });
 
     // ---- Crash namespace
@@ -203,8 +216,14 @@ app
     const plinkoNsp = io.of('/plinko');
 
     plinkoNsp.on('connection', (socket) => {
-      console.log('✅ Client connected to /plinko:', socket.id);
+      console.log('✅ Client connected to /plinko:', socket.id, 'Transport:', socket.conn.transport.name);
+      
+      // Log transport upgrades for debugging
+      socket.conn.on('upgrade', (transport) => {
+        console.log('🔄 Transport upgraded to:', transport.name, 'for socket:', socket.id);
+      });
 
+      // Send initial state to new client
       socket.emit('round_update', {
         state: plinkoState.state,
         roundId: plinkoState.roundId,
@@ -213,24 +232,29 @@ app
       });
 
       socket.on('join_round', (data) => {
-        console.log('📥 Plinko join:', data);
+        console.log('📥 Plinko join:', data, 'from socket:', socket.id);
 
         if (plinkoState.state === 'IDLE') {
           plinkoState.state = 'COUNTDOWN';
           plinkoState.roundId = `plinko_${Date.now()}`;
           plinkoState.timeLeftMs = 5000;
+          console.log('🎮 New round started:', plinkoState.roundId);
         }
 
         if (plinkoState.state === 'COUNTDOWN') {
           plinkoState.players++;
           plinkoState.lockedBets.push(data);
           socket.emit('joined', { roundId: plinkoState.roundId, userId: data.userId });
+          
+          // Broadcast to ALL clients in the namespace
           plinkoNsp.emit('round_update', {
             state: plinkoState.state,
             roundId: plinkoState.roundId,
             players: plinkoState.players,
             timeLeftMs: plinkoState.timeLeftMs,
           });
+          
+          console.log(`👥 Total players in round ${plinkoState.roundId}:`, plinkoState.players);
         }
       });
 

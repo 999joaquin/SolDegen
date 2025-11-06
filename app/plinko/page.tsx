@@ -90,6 +90,25 @@ export default function PlinkoPage() {
   }, [clientSeed]);
 
   useEffect(() => {
+    // Log connection status for debugging multiplayer
+    console.log('🔌 Socket connecting...', socket.id);
+    
+    const handleConnect = () => {
+      console.log('✅ Socket connected!', socket.id, 'Transport:', socket.io.engine.transport.name);
+    };
+    
+    const handleConnectError = (err: any) => {
+      console.error('❌ Socket connection error:', err.message);
+    };
+    
+    const handleDisconnect = (reason: string) => {
+      console.log('🔌 Socket disconnected:', reason);
+    };
+    
+    socket.on('connect', handleConnect);
+    socket.on('connect_error', handleConnectError);
+    socket.on('disconnect', handleDisconnect);
+    
     const loadInitialData = async () => {
       try {
         const [fairData, balanceData, statsData] = await Promise.all([getFair(), getBalance(userId), getStats()]);
@@ -103,6 +122,7 @@ export default function PlinkoPage() {
     loadInitialData();
 
     const handleRoundUpdate = (update: RoundUpdate) => {
+      console.log('🎮 Round update received:', update, 'My userId:', userId);
       setRoundState(update.state);
       setPlayers(update.players);
       setTimeLeftMs(update.timeLeftMs);
@@ -196,6 +216,9 @@ export default function PlinkoPage() {
     socket.on('round_finished', handleRoundFinished);
 
     return () => {
+      socket.off('connect', handleConnect);
+      socket.off('connect_error', handleConnectError);
+      socket.off('disconnect', handleDisconnect);
       socket.off('round_update', handleRoundUpdate);
       socket.off('joined', handleJoined);
       socket.off('round_started', handleRoundStarted);
@@ -216,6 +239,7 @@ export default function PlinkoPage() {
   };
 
   const handleJoinRound = () => {
+    console.log('🎯 Joining round - My userId:', userId, 'Current players:', players);
     socket.emit('join_round', { userId, bet, risk: FIXED_RISK, rows: FIXED_ROWS, clientSeed });
   };
 
