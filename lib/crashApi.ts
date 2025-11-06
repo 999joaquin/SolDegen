@@ -1,4 +1,4 @@
-const BASE = (process.env.NEXT_PUBLIC_API_BASE ?? 'http://localhost:3000').replace(/\/$/, '');
+const BASE = (process.env.NEXT_PUBLIC_API_BASE ?? '').replace(/\/$/, '');
 
 export const getCrashFair = () => fetch(`${BASE}/api/crash/fair`).then(r => {
   if (!r.ok) throw new Error('Failed to fetch crash fair');
