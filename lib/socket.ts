@@ -4,7 +4,7 @@ const API = (process.env.NEXT_PUBLIC_API_BASE ?? 'http://localhost:3000').replac
 
 export const socket = io(`${API}/plinko`, {
   path: '/socket.io',
-  transports: ['websocket', 'polling'],
+  transports: ['polling', 'websocket'],
   autoConnect: true,
   reconnection: true,
   reconnectionDelay: 1000,

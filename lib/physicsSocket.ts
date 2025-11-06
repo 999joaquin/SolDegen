@@ -4,9 +4,10 @@ let physicsSocket: Socket | null = null;
 
 export const getPhysicsSocket = () => {
   if (!physicsSocket) {
-    // Connect to Python physics backend
-    physicsSocket = io('http://localhost:8000', {
-      transports: ['websocket', 'polling'],
+    // Connect via Node proxy path so it works in AWS App Runner
+    physicsSocket = io('/', {
+      path: '/physics/socket.io',
+      transports: ['polling', 'websocket'],
       reconnection: true,
       reconnectionDelay: 1000,
       reconnectionAttempts: 5,
