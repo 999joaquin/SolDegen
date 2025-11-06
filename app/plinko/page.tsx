@@ -4,11 +4,12 @@ import { useState, useEffect, useMemo, useCallback } from 'react';
 import Controls from '@/components/Controls';
 import PlinkoBoard from '@/components/PlinkoBoard';
 import Sidebar from '@/components/Sidebar';
-import { getFair, getBalance, getStats } from '@/lib/api';
+import { getFair, getStats } from '@/lib/api';
 import { socket } from '@/lib/socket';
 import { FIXED_ROWS, FIXED_RISK } from '@/lib/constants';
-import { getDemoUserId } from '@/lib/user';
 import { updateLeaderboard } from '@/lib/leaderboardApi';
+import { useWallet } from '@/hooks/use-wallet';
+import { useSolanaBalance } from '@/hooks/use-solana-balance';
 
 type RoundState = 'IDLE' | 'COUNTDOWN' | 'RUNNING';
 
@@ -48,8 +49,24 @@ type RoundUpdate = {
 };
 
 export default function PlinkoPage() {
-  const userId = useMemo(() => getDemoUserId(), []);
-  const username = useMemo(() => `Player${userId}`, [userId]);
+  // Gunakan wallet Solana yang sudah connected
+  const { connected, address, username: walletUsername } = useWallet();
+  const { balance: solanaBalance, refresh: refreshSolanaBalance } = useSolanaBalance(address);
+  
+  // Generate userId dari wallet address, atau gunakan demo userId jika tidak connected
+  const userId = useMemo(() => {
+    if (address) {
+      // Convert address ke number untuk compatibility dengan existing code
+      return parseInt(address.slice(-8), 16); // Ambil 8 karakter terakhir dan convert ke number
+    }
+    // Fallback ke demo user jika tidak connected
+    return Math.floor(Math.random() * 100000);
+  }, [address]);
+  
+  const username = useMemo(() => {
+    if (walletUsername) return walletUsername;
+    return `Player${userId}`;
+  }, [walletUsername, userId]);
 
   const [bet, setBet] = useState(1.0);
   const [clientSeed, setClientSeed] = useState('');
@@ -89,6 +106,13 @@ export default function PlinkoPage() {
     }
   }, [clientSeed]);
 
+  // Update balance setiap kali Solana balance berubah
+  useEffect(() => {
+    if (solanaBalance !== null) {
+      setBalance(solanaBalance);
+    }
+  }, [solanaBalance]);
+
   useEffect(() => {
     // Log connection status for debugging multiplayer
     console.log('🔌 Socket connecting...', socket.id);
@@ -111,8 +135,9 @@ export default function PlinkoPage() {
     
     const loadInitialData = async () => {
       try {
-        const [fairData, balanceData, statsData] = await Promise.all([getFair(), getBalance(userId), getStats()]);
-        setBalance(balanceData.balance);
+        const [fairData, statsData] = await Promise.all([getFair(), getStats()]);
+        // Gunakan balance dari Solana wallet, bukan dari API demo
+        setBalance(solanaBalance || 0);
         setHouseProfit(statsData.houseProfit);
         setServerSeedHash(fairData.serverSeedHash);
       } catch (error) {
@@ -230,8 +255,10 @@ export default function PlinkoPage() {
 
   const refreshBalanceAndStats = async () => {
     try {
-      const [balanceData, statsData] = await Promise.all([getBalance(userId), getStats()]);
-      setBalance(balanceData.balance);
+      // Refresh Solana balance dari wallet
+      await refreshSolanaBalance();
+      const statsData = await getStats();
+      setBalance(solanaBalance || 0);
       setHouseProfit(statsData.houseProfit);
     } catch (error) {
       console.error('Failed to refresh balance and stats:', error);
@@ -239,6 +266,17 @@ export default function PlinkoPage() {
   };
 
   const handleJoinRound = () => {
+    // Validasi: harus connected wallet dan balance cukup
+    if (!connected) {
+      console.error('❌ Wallet not connected');
+      return;
+    }
+    
+    if (balance < bet) {
+      console.error('❌ Insufficient balance');
+      return;
+    }
+    
     console.log('🎯 Joining round - My userId:', userId, 'Current players:', players);
     socket.emit('join_round', { userId, bet, risk: FIXED_RISK, rows: FIXED_ROWS, clientSeed });
   };
@@ -286,13 +324,18 @@ export default function PlinkoPage() {
   }, [pendingResult, physicsMultiplier, bet, userId, username]);
 
   const getButtonText = () => {
+    if (!connected) return 'Connect Wallet First';
+    if (balance < bet) return 'Insufficient Balance';
     if (roundState === 'RUNNING') return 'Dropping...';
     if (joined && roundState === 'COUNTDOWN') return 'Joined - Waiting...';
     if (roundState === 'COUNTDOWN') return 'Join Round';
     return 'Start / Join Round';
   };
 
-  const isButtonDisabled = () => (isAnimating || roundState === 'RUNNING' || (joined && roundState === 'COUNTDOWN'));
+  const isButtonDisabled = () => {
+    if (!connected || balance < bet) return true;
+    return isAnimating || roundState === 'RUNNING' || (joined && roundState === 'COUNTDOWN');
+  };
 
   const getRoundStatus = () => {
     switch (roundState) {
@@ -331,6 +374,8 @@ export default function PlinkoPage() {
           betHistory={betHistory}
           userId={userId}
           username={username}
+          walletAddress={address}
+          isWalletConnected={connected}
         />
       </div>
     </div>

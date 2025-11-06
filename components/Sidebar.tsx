@@ -24,6 +24,8 @@ interface SidebarProps {
   betHistory: BetResult[];
   userId: number;
   username: string;
+  walletAddress?: string | null;
+  isWalletConnected?: boolean;
 }
 
 export default function Sidebar({
@@ -34,6 +36,8 @@ export default function Sidebar({
   betHistory,
   userId,
   username,
+  walletAddress,
+  isWalletConnected = false,
 }: SidebarProps) {
   return (
   <div className="w-full lg:w-72 xl:w-80 space-y-3 sm:space-y-4">
@@ -42,8 +46,20 @@ export default function Sidebar({
         <div className="space-y-2 sm:space-y-3 text-xs sm:text-sm">
           <div className="flex justify-between items-center">
             <span className="text-zinc-400">Balance:</span>
-            <span className="text-purple-400 text-base sm:text-lg md:text-xl font-bold">{balance?.toFixed(2) || '0.00'} SOL</span>
+            <span className="text-purple-400 text-base sm:text-lg md:text-xl font-bold">
+              {balance?.toFixed(3) || '0.000'} SOL
+            </span>
           </div>
+          {isWalletConnected && walletAddress && (
+            <div className="text-[9px] sm:text-[10px] text-green-400 bg-green-500/10 border border-green-500/20 rounded px-2 py-1">
+              ✓ Using Solana Wallet Balance
+            </div>
+          )}
+          {!isWalletConnected && (
+            <div className="text-[9px] sm:text-[10px] text-yellow-400 bg-yellow-500/10 border border-yellow-500/20 rounded px-2 py-1">
+              ⚠ Connect wallet to play with real SOL
+            </div>
+          )}
           <div className="flex justify-between items-center">
             <span className="text-zinc-400">House Profit:</span>
             <span className="text-purple-400 font-mono text-xs sm:text-sm">{houseProfit?.toFixed(2) || '0.00'} SOL</span>
