@@ -1,30 +1,38 @@
-name: Build & Deploy to App Runner
+name: Build & Push to ECR (auto-deploy via App Runner)
 
 on:
   push:
-    branches: [ "main" ]
-  workflow_dispatch:
+    branches: [ main ]   # change if your default branch differs
 
 permissions:
-  contents: read            # checkout code
-  id-token: write           # OIDC -> assume role
+  id-token: write        # for OIDC
+  contents: read
 
 env:
   AWS_REGION: ${{ secrets.AWS_REGION }}
   AWS_ACCOUNT_ID: ${{ secrets.AWS_ACCOUNT_ID }}
-  ECR_REPOSITORY: ${{ secrets.ECR_REPOSITORY }}   # e.g. soldegen
-  APP_RUNNER_SERVICE_ARN: ${{ secrets.APP_RUNNER_SERVICE_ARN }}
+  ECR_REPOSITORY: ${{ secrets.ECR_REPOSITORY }}   # e.g. "soldegen"
+  IMAGE_TAG: latest                                # App Runner watches this tag
 
 jobs:
-  deploy:
+  build-and-push:
     runs-on: ubuntu-latest
 
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
-      # ---- Assume your AWS role via OIDC ----
-      - name: Configure AWS credentials (assume role via OIDC)
+      # If you use build-time env for Next.js, pass them here
+      - name: Set build args
+        run: |
+          echo "BUILD_ARG_NEXT_PUBLIC_SUPABASE_URL=${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}" >> $GITHUB_ENV
+          echo "BUILD_ARG_NEXT_PUBLIC_SUPABASE_ANON_KEY=${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}" >> $GITHUB_ENV
+          echo "BUILD_ARG_NEXT_PUBLIC_API_BASE=${{ secrets.NEXT_PUBLIC_API_BASE }}" >> $GITHUB_ENV
+          echo "BUILD_ARG_NEXT_PUBLIC_PHYSICS_SERVER_URL=${{ secrets.NEXT_PUBLIC_PHYSICS_SERVER_URL }}" >> $GITHUB_ENV
+          echo "BUILD_ARG_NEXT_PUBLIC_SOLANA_NETWORK=${{ secrets.NEXT_PUBLIC_SOLANA_NETWORK }}" >> $GITHUB_ENV
+          echo "BUILD_ARG_NEXT_PUBLIC_SOLANA_RPC_URL=${{ secrets.NEXT_PUBLIC_SOLANA_RPC_URL }}" >> $GITHUB_ENV
+
+      - name: Configure AWS credentials (assume OIDC role)
         uses: aws-actions/configure-aws-credentials@v4
         with:
           role-to-assume: ${{ secrets.AWS_ROLE_TO_ASSUME }}
@@ -32,31 +40,25 @@ jobs:
           audience: sts.amazonaws.com
           output-credentials: true
 
-      # ---- Log in to ECR ----
-      - name: Login to Amazon ECR
-        id: ecr
+      - name: Login to ECR
         uses: aws-actions/amazon-ecr-login@v2
 
-      # ---- (Optional) enable Buildx so cache works nicely ----
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
-
-      # ---- Build & push image ----
-      - name: Build and push image
-        uses: docker/build-push-action@v6
-        with:
-          context: .
-          push: true
-          tags: ${{ steps.ecr.outputs.registry }}/${{ env.ECR_REPOSITORY }}:latest
-          build-args: |
-            NEXT_PUBLIC_SUPABASE_URL=${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
-            NEXT_PUBLIC_SUPABASE_ANON_KEY=${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
-            NEXT_PUBLIC_API_BASE=${{ secrets.NEXT_PUBLIC_API_BASE }}
-            NEXT_PUBLIC_PHYSICS_SERVER_URL=${{ secrets.NEXT_PUBLIC_PHYSICS_SERVER_URL }}
-            NEXT_PUBLIC_SOLANA_NETWORK=${{ secrets.NEXT_PUBLIC_SOLANA_NETWORK }}
-            NEXT_PUBLIC_SOLANA_RPC_URL=${{ secrets.NEXT_PUBLIC_SOLANA_RPC_URL }}
-
-      # ---- Kick App Runner to deploy the new image (optional if you enabled auto-deploy from ECR) ----
-      - name: Trigger App Runner deployment
+      - name: Build Docker image
         run: |
-          aws apprunner start-deployment --service-arn "$APP_RUNNER_SERVICE_ARN"
+          docker build \
+            --build-arg NEXT_PUBLIC_SUPABASE_URL="$BUILD_ARG_NEXT_PUBLIC_SUPABASE_URL" \
+            --build-arg NEXT_PUBLIC_SUPABASE_ANON_KEY="$BUILD_ARG_NEXT_PUBLIC_SUPABASE_ANON_KEY" \
+            --build-arg NEXT_PUBLIC_API_BASE="$BUILD_ARG_NEXT_PUBLIC_API_BASE" \
+            --build-arg NEXT_PUBLIC_PHYSICS_SERVER_URL="$BUILD_ARG_NEXT_PUBLIC_PHYSICS_SERVER_URL" \
+            --build-arg NEXT_PUBLIC_SOLANA_NETWORK="$BUILD_ARG_NEXT_PUBLIC_SOLANA_NETWORK" \
+            --build-arg NEXT_PUBLIC_SOLANA_RPC_URL="$BUILD_ARG_NEXT_PUBLIC_SOLANA_RPC_URL" \
+            -t $ECR_REPOSITORY:$IMAGE_TAG \
+            -t $ECR_REPOSITORY:${{ github.sha }} .
+
+      - name: Tag for ECR and push
+        run: |
+          ECR_URI=${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com/${ECR_REPOSITORY}
+          docker tag $ECR_REPOSITORY:$IMAGE_TAG $ECR_URI:$IMAGE_TAG
+          docker tag $ECR_REPOSITORY:${{ github.sha }} $ECR_URI:${{ github.sha }}
+          docker push $ECR_URI:$IMAGE_TAG
+          docker push $ECR_URI:${{ github.sha }}
